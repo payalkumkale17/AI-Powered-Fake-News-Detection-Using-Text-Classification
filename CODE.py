@@ -1,26 +1,3 @@
-"""
-AI-Powered Fake News Detection Using Text Classification
-==========================================================
-Standalone, self-contained pipeline script.
-
-What this script does:
-  1. Downloads the real "fake_and_real_news_dataset" (4,594 balanced political
-     news articles) from GitHub if not already present locally.
-  2. Cleans and preprocesses the text from scratch (regex + NLTK).
-  3. Builds TF-IDF features (unigrams + bigrams, 5,000 features).
-  4. Trains and evaluates four classifiers: Logistic Regression, Random
-     Forest, Multinomial Naive Bayes, and a Neural Network (MLP).
-  5. Prints accuracy / precision / recall / F1 for every model and confirms
-     the best model exceeds 93% accuracy.
-  6. Demonstrates the trained prediction module on new, unseen headlines.
-
-Requirements (install once):
-    pip install pandas numpy scikit-learn nltk
-
-Run:
-    python fake_news_detection_code.py
-"""
-
 import os
 import re
 import sys
@@ -28,6 +5,9 @@ import urllib.request
 
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("TkAgg")  # opens plot windows; falls back automatically if unavailable
+import matplotlib.pyplot as plt
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
@@ -35,7 +15,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import (accuracy_score, precision_score, recall_score,
+                              f1_score, confusion_matrix)
 
 import nltk
 
@@ -76,7 +57,23 @@ print(f"Loaded {len(df)} articles. Class balance:")
 print(df["label"].value_counts().to_string())
 
 # ------------------------------------------------------------------
-# 2. Text preprocessing (built from scratch)
+# 2. GRAPH 1: Class distribution
+# ------------------------------------------------------------------
+counts = df["label"].value_counts()
+plt.figure(figsize=(5, 4))
+bars = plt.bar(counts.index, counts.values, color=["#2E5EAA", "#E4572E"], width=0.55)
+for b in bars:
+    plt.text(b.get_x() + b.get_width() / 2, b.get_height() + 15, str(int(b.get_height())),
+              ha="center", fontsize=11, fontweight="bold")
+plt.ylabel("Number of Articles")
+plt.title("Class Distribution: Real vs Fake News")
+plt.ylim(0, max(counts.values) * 1.15)
+plt.tight_layout()
+plt.savefig("class_distribution.png")
+print("Saved: class_distribution.png")
+
+# ------------------------------------------------------------------
+# 3. Text preprocessing (built from scratch)
 # ------------------------------------------------------------------
 stop_words = set(stopwords.words("english"))
 lemmatizer = WordNetLemmatizer()
@@ -105,7 +102,7 @@ df = df[df["combined"].str.len() > 0].reset_index(drop=True)
 print(f"After cleaning: {len(df)} articles retained.")
 
 # ------------------------------------------------------------------
-# 3. Feature engineering: TF-IDF
+# 4. Feature engineering: TF-IDF
 # ------------------------------------------------------------------
 y = df["label"].map({"REAL": 0, "FAKE": 1})
 vectorizer = TfidfVectorizer(max_features=5000, ngram_range=(1, 2), min_df=3)
@@ -118,7 +115,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 print(f"Train: {X_train.shape[0]} articles | Test: {X_test.shape[0]} articles")
 
 # ------------------------------------------------------------------
-# 4. Train and evaluate four models
+# 5. Train and evaluate four models
 # ------------------------------------------------------------------
 models = {
     "Logistic Regression": LogisticRegression(max_iter=1000, C=1.0),
@@ -133,12 +130,14 @@ models = {
 }
 
 results = {}
+preds_store = {}
 print("\n" + "=" * 60)
 print(f"{'Model':<24}{'Accuracy':>10}{'Precision':>12}{'Recall':>10}{'F1':>8}")
 print("=" * 60)
 for name, model in models.items():
     model.fit(X_train, y_train)
     preds = model.predict(X_test)
+    preds_store[name] = preds
     acc = accuracy_score(y_test, preds)
     prec = precision_score(y_test, preds)
     rec = recall_score(y_test, preds)
@@ -160,7 +159,70 @@ assert best_acc > 0.93, (
 print("Check passed: best model accuracy exceeds 93%.")
 
 # ------------------------------------------------------------------
-# 5. Prediction module - try it on brand-new headlines
+# 6. GRAPH 2: Model comparison bar chart
+# ------------------------------------------------------------------
+metrics = ["accuracy", "precision", "recall", "f1"]
+labels = list(results.keys())
+x_pos = np.arange(len(metrics))
+width = 0.2
+colors = ["#2E5EAA", "#17A398", "#F3A712", "#E4572E"]
+
+plt.figure(figsize=(9, 5))
+for i, name in enumerate(labels):
+    vals = [results[name][m] for m in metrics]
+    plt.bar(x_pos + i * width, vals, width, label=name, color=colors[i % len(colors)])
+plt.xticks(x_pos + width * (len(labels) - 1) / 2,
+           ["Accuracy", "Precision", "Recall", "F1-score"])
+plt.ylim(0, 1.05)
+plt.ylabel("Score")
+plt.title("Model Performance Comparison")
+plt.legend(loc="lower right", fontsize=8)
+plt.tight_layout()
+plt.savefig("model_comparison.png")
+print("Saved: model_comparison.png")
+
+# ------------------------------------------------------------------
+# 7. GRAPH 3: Confusion matrices for all four models
+# ------------------------------------------------------------------
+fig, axes = plt.subplots(2, 2, figsize=(9, 8))
+for ax, (name, preds) in zip(axes.flat, preds_store.items()):
+    cm = confusion_matrix(y_test, preds)
+    ax.imshow(cm, cmap="Blues")
+    for i in range(2):
+        for j in range(2):
+            ax.text(j, i, str(cm[i, j]), ha="center", va="center",
+                     color="white" if cm[i, j] > cm.max() / 2 else "black",
+                     fontsize=13, fontweight="bold")
+    ax.set_xticks([0, 1]); ax.set_yticks([0, 1])
+    ax.set_xticklabels(["REAL", "FAKE"]); ax.set_yticklabels(["REAL", "FAKE"])
+    ax.set_xlabel("Predicted"); ax.set_ylabel("Actual")
+    ax.set_title(name, fontsize=11)
+plt.tight_layout()
+plt.savefig("confusion_matrices.png")
+print("Saved: confusion_matrices.png")
+
+# ------------------------------------------------------------------
+# 8. GRAPH 4: Feature importance (Logistic Regression coefficients)
+# ------------------------------------------------------------------
+lr = models["Logistic Regression"]
+feature_names = np.array(vectorizer.get_feature_names_out())
+coefs = lr.coef_[0]
+top_fake_idx = np.argsort(coefs)[-15:][::-1]
+top_real_idx = np.argsort(coefs)[:15]
+
+fig, axes = plt.subplots(1, 2, figsize=(11, 5.5))
+axes[0].barh(feature_names[top_real_idx][::-1], coefs[top_real_idx][::-1], color="#2E5EAA")
+axes[0].set_title("Top Words Indicating REAL News")
+axes[0].set_xlabel("Logistic Regression Coefficient")
+axes[1].barh(feature_names[top_fake_idx][::-1], coefs[top_fake_idx][::-1], color="#E4572E")
+axes[1].set_title("Top Words Indicating FAKE News")
+axes[1].set_xlabel("Logistic Regression Coefficient")
+plt.tight_layout()
+plt.savefig("feature_importance.png")
+print("Saved: feature_importance.png")
+
+# ------------------------------------------------------------------
+# 9. Prediction module - try it on brand-new headlines
 # ------------------------------------------------------------------
 def predict_article(raw_text, model=best_model, vectorizer=vectorizer):
     cleaned = clean_text(raw_text)
@@ -184,5 +246,11 @@ for article in demo_articles:
     label, conf = predict_article(article)
     print(f'  "{article[:65]}..."')
     print(f"    -> Prediction: {label}  (confidence: {conf}%)\n")
+
+print("All 4 graphs saved in this folder:")
+print("  class_distribution.png, model_comparison.png,")
+print("  confusion_matrices.png, feature_importance.png")
+print("\nOpening graphs on screen now (close each window to see the next)...")
+plt.show()
 
 print("Pipeline complete. No errors.")
