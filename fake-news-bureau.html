@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Bureau — Fake News Case File</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #e9dfc4;
+    --paper-dark: #ddd0a8;
+    --ink: #2a2118;
+    --ink-soft: #4a3f30;
+    --manila: #cbb27c;
+    --manila-dark: #a88a4e;
+    --stamp-red: #8c2b20;
+    --stamp-red-dark: #6d1f17;
+    --verdict-green: #3c5233;
+    --verdict-green-dark: #2a3a24;
+    --brass: #9c7c3d;
+    --shadow: rgba(20,14,6,0.45);
+    --line: rgba(42,33,24,0.35);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(255,255,255,0.08), transparent 40%),
+      var(--paper);
+    background-image:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0px, rgba(0,0,0,0.02) 1px, transparent 1px, transparent 3px),
+      radial-gradient(circle at 15% 20%, rgba(90,60,20,0.10), transparent 35%),
+      radial-gradient(circle at 85% 75%, rgba(90,60,20,0.10), transparent 40%),
+      linear-gradient(var(--paper), var(--paper));
+    color: var(--ink);
+    font-family: 'Courier Prime', monospace;
+    min-height:100vh;
+    padding: 28px 16px 60px;
+  }
+
+  .noise-overlay{
+    position:fixed; inset:0; pointer-events:none; opacity:0.05; z-index:9999;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .wrap{ max-width: 880px; margin: 0 auto; position:relative; }
+
+  /* ===== Header / Case Banner ===== */
+  header{
+    text-align:center;
+    margin-bottom: 34px;
+    position:relative;
+  }
+  .badge{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:74px; height:74px; border-radius:50%;
+    border: 3px solid var(--ink);
+    background: var(--manila);
+    margin-bottom: 10px;
+    box-shadow: 0 3px 0 var(--ink), inset 0 0 0 3px var(--paper);
+    font-family:'Oswald',sans-serif; font-weight:700; font-size:22px; color:var(--ink);
+    transform: rotate(-3deg);
+  }
+  h1.masthead{
+    font-family:'Special Elite', monospace;
+    font-size: clamp(30px, 6vw, 52px);
+    letter-spacing: 2px;
+    margin: 6px 0 4px;
+    color: var(--ink);
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.08);
+  }
+  .subhead{
+    font-family:'Oswald', sans-serif;
+    text-transform:uppercase;
+    letter-spacing: 4px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    display:inline-block;
+    padding: 6px 18px;
+    margin-top: 8px;
+  }
+  .case-no{
+    position:absolute; top:0; right:0;
+    font-family:'Special Elite', monospace;
+    font-size: 11px; color: var(--ink-soft);
+    text-align:right; line-height:1.6;
+    transform: rotate(2deg);
+  }
+  .case-no span{display:block;}
+
+  /* ===== Folder / Card ===== */
+  .folder{
+    background: var(--manila);
+    border: 2px solid var(--ink);
+    border-radius: 3px;
+    box-shadow: 6px 8px 0 var(--shadow), 0 0 0 1px rgba(0,0,0,0.05) inset;
+    padding: 26px 24px 22px;
+    position: relative;
+    margin-bottom: 30px;
+  }
+  .folder::before{
+    content:"";
+    position:absolute; top:-14px; left:24px;
+    width: 120px; height:18px;
+    background: var(--manila);
+    border: 2px solid var(--ink);
+    border-bottom:none;
+    border-radius: 4px 12px 0 0;
+  }
+  .folder-label{
+    font-family:'Oswald', sans-serif;
+    text-transform:uppercase;
+    font-weight:600;
+    letter-spacing:2px;
+    font-size: 12px;
+    color: var(--ink);
+    display:flex; align-items:center; gap:8px;
+    margin-bottom: 14px;
+  }
+  .folder-label::before{ content:""; font-size:14px; filter:grayscale(1) contrast(1.4); }
+
+  textarea#article-input{
+    width:100%;
+    min-height: 190px;
+    resize: vertical;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: 2px;
+    padding: 14px;
+    font-family:'Courier Prime', monospace;
+    font-size: 14.5px;
+    line-height:1.55;
+    color: var(--ink);
+    box-shadow: inset 2px 2px 6px rgba(0,0,0,0.12);
+  }
+  textarea#article-input::placeholder{ color: rgba(42,33,24,0.45); font-style: italic; }
+  textarea#article-input:focus{ outline: 2px solid var(--brass); outline-offset: 2px; }
+
+  .folder-footer{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:14px; flex-wrap:wrap; gap:12px;
+  }
+  .char-count{ font-size:11px; color: var(--ink-soft); font-family:'Oswald',sans-serif; letter-spacing:1px; }
+
+  .btn{
+    font-family:'Oswald', sans-serif;
+    text-transform:uppercase;
+    font-weight:600;
+    letter-spacing: 2px;
+    font-size: 13px;
+    padding: 13px 26px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 2px;
+    cursor:pointer;
+    box-shadow: 3px 3px 0 var(--brass);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .btn:hover{ transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--brass); }
+  .btn:active{ transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--brass); }
+  .btn:disabled{ opacity:0.55; cursor:progress; }
+
+  .btn-ghost{
+    background:transparent; color: var(--ink); border: 1.5px dashed var(--ink-soft);
+    box-shadow:none; font-size:11px; padding: 9px 14px;
+  }
+  .btn-ghost:hover{ background: rgba(42,33,24,0.06); box-shadow:none; }
+
+  /* ===== Cold Cases (examples) ===== */
+  .coldcases{ display:flex; flex-wrap:wrap; gap:8px; margin-top: 16px; }
+
+  /* ===== Verdict Area ===== */
+  #verdict-area{ display:none; }
+  .case-file{
+    background: var(--paper-dark);
+    border: 2px solid var(--ink);
+    padding: 30px 26px;
+    position: relative;
+    box-shadow: 6px 8px 0 var(--shadow);
+    overflow:hidden;
+    margin-bottom: 30px;
+  }
+  .stamp{
+    font-family:'Special Elite', monospace;
+    font-size: clamp(28px, 5.5vw, 46px);
+    font-weight:700;
+    letter-spacing: 3px;
+    border: 6px double currentColor;
+    padding: 10px 22px;
+    display:inline-block;
+    transform: rotate(-7deg) scale(0);
+    opacity:0;
+    text-transform:uppercase;
+    border-radius: 6px;
+  }
+  .stamp.real{ color: var(--verdict-green-dark); }
+  .stamp.fake{ color: var(--stamp-red-dark); }
+  .stamp.stamped{
+    animation: stampdown .38s cubic-bezier(.2,1.6,.4,1) forwards;
+  }
+  @keyframes stampdown{
+    0%{ transform: rotate(-7deg) scale(2.6); opacity:0; }
+    60%{ opacity:1; }
+    100%{ transform: rotate(-7deg) scale(1); opacity:0.92; }
+  }
+  .stamp-row{ text-align:center; margin-bottom: 22px; }
+
+  .confidence-block{ margin: 22px auto 8px; max-width: 480px; }
+  .confidence-label{
+    font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:2px;
+    font-size:11px; color:var(--ink-soft); text-align:center; margin-bottom:8px;
+  }
+  .gauge{ position:relative; width:100%; height: 110px; }
+  .gauge svg{ width:100%; height:100%; overflow:visible; }
+  .gauge-value{
+    position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+    font-family:'Special Elite',monospace; font-size:26px; color:var(--ink);
+  }
+
+  .evidence{
+    display:grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 26px;
+  }
+  @media (max-width:600px){ .evidence{ grid-template-columns: 1fr; } }
+  .evidence-col h3{
+    font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:1.5px;
+    font-size:12px; margin: 0 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line);
+  }
+  .evidence-col.fake h3{ color: var(--stamp-red-dark); }
+  .evidence-col.real h3{ color: var(--verdict-green-dark); }
+  .ev-item{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size: 13px; padding: 5px 0; border-bottom: 1px dotted rgba(42,33,24,0.25);
+  }
+  .ev-word{ font-family:'Courier Prime',monospace; }
+  .ev-bar-wrap{ width:70px; height:8px; background:rgba(0,0,0,0.08); border-radius:2px; overflow:hidden; margin-left:8px; }
+  .ev-bar{ height:100%; }
+  .fake .ev-bar{ background: var(--stamp-red); }
+  .real .ev-bar{ background: var(--verdict-green); }
+  .no-evidence{ font-size:12px; color:var(--ink-soft); font-style:italic; }
+
+  .analyst-note{
+    margin-top: 24px; padding-top:16px; border-top: 1px dashed var(--line);
+    font-size: 12.5px; line-height:1.6; color: var(--ink-soft); font-style:italic;
+  }
+  .paperclip{
+    position:absolute; top:-10px; right:26px; width:26px; height:56px;
+    opacity:0.75;
+  }
+
+  /* ===== Dossier / About section ===== */
+  .dossier{
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    padding: 22px 24px;
+    margin-bottom: 24px;
+  }
+  .dossier h2{
+    font-family:'Special Elite', monospace;
+    font-size: 18px; letter-spacing:1px; margin:0 0 12px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .dossier h2::before{ content:""; }
+  .stat-grid{
+    display:grid; grid-template-columns: repeat(4,1fr); gap:14px; margin: 14px 0 6px;
+  }
+  @media (max-width:640px){ .stat-grid{ grid-template-columns: repeat(2,1fr);} }
+  .stat{
+    text-align:center; border: 1px solid var(--line); padding: 12px 6px; background: var(--paper-dark);
+  }
+  .stat .num{ font-family:'Special Elite',monospace; font-size: 22px; }
+  .stat .lbl{ font-family:'Oswald',sans-serif; font-size:9.5px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-soft); margin-top:4px;}
+  .dossier p{ font-size: 13.5px; line-height:1.7; color: var(--ink-soft); }
+  .method-list{ font-size:13px; line-height:1.9; padding-left:18px; color:var(--ink-soft); }
+
+  footer{
+    text-align:center; font-size:11px; color: var(--ink-soft);
+    font-family:'Oswald',sans-serif; letter-spacing:1px; margin-top: 30px; opacity:0.8;
+  }
+  footer a{ color: var(--ink); }
+
+  .loading-line{
+    display:flex; align-items:center; gap:10px; justify-content:center;
+    font-family:'Special Elite',monospace; font-size:13px; color:var(--ink-soft);
+    padding: 10px 0;
+  }
+  .blink{ animation: blink 1s steps(2) infinite; }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  @media (prefers-reduced-motion: reduce){
+    .stamp.stamped{ animation:none; opacity:0.92; transform:rotate(-7deg) scale(1); }
+    .blink{ animation:none; }
+  }
+</style>
+</head>
+<body>
+<div class="noise-overlay"></div>
+<div class="wrap">
+
+  <header>
+    <div class="case-no"><span>FILE NO. 2026-FN-0193</span><span>STATUS: OPEN</span></div>
+    <div class="badge">FN<br></div>
+    <h1 class="masthead">The Bureau</h1>
+    <div class="subhead">Fake News Investigations Unit</div>
+  </header>
+
+  <div class="folder">
+    <div class="folder-label">Case Intake — Submit Article for Review</div>
+    <textarea id="article-input" placeholder="Paste a headline and/or article body here. The Bureau will run it through the lab...&#10;&#10;e.g. &quot;BREAKING: Scientists SHOCKED after discovering this one weird trick doctors don't want you to know about!!!&quot;"></textarea>
+    <div class="folder-footer">
+      <span class="char-count" id="char-count">0 characters on file</span>
+      <button class="btn" id="analyze-btn">Open Investigation →</button>
+    </div>
+    <div class="coldcases">
+      <button class="btn btn-ghost" data-case="0">Cold Case #1</button>
+      <button class="btn btn-ghost" data-case="1">Cold Case #2</button>
+      <button class="btn btn-ghost" data-case="2">Cold Case #3</button>
+      <button class="btn btn-ghost" data-case="3">Cold Case #4</button>
+    </div>
+  </div>
+
+  <div id="verdict-area">
+    <div class="case-file">
+      <svg class="paperclip" viewBox="0 0 24 60"><path d="M12 4 C5 4 5 12 5 16 L5 44 C5 52 19 52 19 44 L19 20" stroke="#666" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+      <div class="stamp-row"><span class="stamp" id="stamp-el">—</span></div>
+
+      <div class="confidence-block">
+        <div class="confidence-label">Polygraph Confidence Reading</div>
+        <div class="gauge">
+          <svg viewBox="0 0 220 120">
+            <path d="M 15 110 A 95 95 0 0 1 205 110" fill="none" stroke="rgba(42,33,24,0.15)" stroke-width="14" stroke-linecap="round"/>
+            <path id="gauge-arc" d="M 15 110 A 95 95 0 0 1 205 110" fill="none" stroke="#8c2b20" stroke-width="14" stroke-linecap="round" stroke-dasharray="298" stroke-dashoffset="298"/>
+            <line id="gauge-needle" x1="110" y1="110" x2="110" y2="30" stroke="#2a2118" stroke-width="3" stroke-linecap="round" transform="rotate(-90 110 110)"/>
+            <circle cx="110" cy="110" r="7" fill="#2a2118"/>
+          </svg>
+          <div class="gauge-value" id="gauge-value">—</div>
+        </div>
+      </div>
+
+      <div class="evidence">
+        <div class="evidence-col fake">
+          <h3>Exhibit A — Suspicious Language</h3>
+          <div id="fake-evidence"></div>
+        </div>
+        <div class="evidence-col real">
+          <h3>Exhibit B — Credible Language</h3>
+          <div id="real-evidence"></div>
+        </div>
+      </div>
+
+      <div class="analyst-note" id="analyst-note"></div>
+    </div>
+  </div>
+
+  <div class="dossier">
+    <h2>How the Bureau Works</h2>
+    <p>This isn't a mock-up — the verdict above comes from a real Logistic&nbsp;Regression classifier, trained from scratch on 4,594 labeled political news articles and run entirely in your browser (your text never leaves this page). It's the same pipeline documented in the accompanying IEEE report: manual text cleaning → TF‑IDF (unigrams + bigrams) → linear classifier.</p>
+    <div class="stat-grid">
+      <div class="stat"><div class="num" id="stat-acc">—</div><div class="lbl">Test Accuracy</div></div>
+      <div class="stat"><div class="num" id="stat-f1">—</div><div class="lbl">F1 Score</div></div>
+      <div class="stat"><div class="num">4,594</div><div class="lbl">Training Articles</div></div>
+      <div class="stat"><div class="num" id="stat-terms">—</div><div class="lbl">Vocabulary Terms</div></div>
+    </div>
+    <p style="margin-top:18px;"><strong>Case method:</strong></p>
+    <ol class="method-list">
+      <li>Strip URLs, HTML tags, punctuation — lowercase everything</li>
+      <li>Remove stopwords + short tokens, lemmatize survivors</li>
+      <li>Vectorize with TF‑IDF (unigrams &amp; bigrams, 1,500 terms)</li>
+      <li>Score with a Logistic Regression model trained on the corpus</li>
+      <li>Report the verdict, confidence, and the words that swung it</li>
+    </ol>
+  </div>
+
+  <footer>
+    Prototype by Payal Kumkale · Summer Internship in AI &amp; ML 2026 · Not a substitute for professional fact-checking
+  </footer>
+</div>
+
+<script>
+const MODEL_DATA = {"terms": ["abc", "abedin", "ability", "able", "abortion", "absolutely", "accept", "access", "according", "account", "accused", "across", "act", "action", "activist", "activity", "actual", "actually", "ad", "add", "added", "adding", "addition", "address", "administration", "advantage", "adviser", "affair", "african", "african american", "age", "agency", "agenda", "agent", "ago", "agree", "agreed", "agreement", "ahead", "aide", "air", "aleppo", "allegation", "allow", "allowed", "ally", "almost", "alone", "along", "already", "also", "alternative", "although", "always", "amendment", "america", "american", "american people", "among", "amount", "analysis", "analyst", "anger", "angry", "announced", "announcement", "another", "answer", "anti", "anyone", "anything", "apparently", "appeal", "appear", "appearance", "appeared", "appears", "approach", "april", "arab", "arabia", "area", "argued", "argument", "arizona", "arm", "armed", "army", "around", "article", "ask", "asked", "asking", "assad", "assault", "asset", "associated", "associated press", "attack", "attacked", "attempt", "attention", "attorney", "attorney general", "audience", "august", "author", "authority", "available", "average", "avoid", "away", "baby", "back", "backed", "background", "bad", "ballot", "ban", "bank", "barack", "barack obama", "base", "based", "battle", "beat", "became", "become", "becomes", "becoming", "began", "begin", "beginning", "behavior", "behind", "belief", "believe", "believed", "ben", "benefit", "bernie", "bernie sander", "best", "better", "beyond", "bid", "biden", "big", "biggest", "bill", "bill clinton", "billion", "billionaire", "bit", "black", "blame", "block", "blue", "board", "body", "bomb", "book", "border", "born", "break", "breaking", "bring", "british", "broke", "brother", "brought", "budget", "build", "building", "built", "bush", "business", "businessman", "buy", "california", "call", "called", "calling", "came", "camp", "campaign", "campaign manager", "cancer", "candidacy", "candidate", "cannot", "capital", "car", "care", "career", "carolina", "carry", "carson", "case", "cash", "cast", "caucus", "cause", "caused", "center", "central", "century", "certain", "certainly", "chair", "chairman", "challenge", "chance", "change", "changed", "character", "charge", "check", "chicago", "chief", "child", "china", "choice", "choose", "chris", "christian", "christie", "church", "citizen", "city", "civil", "civilian", "claim", "claimed", "class", "classified", "clear", "clearly", "cleveland", "click", "climate", "clinton", "clinton campaign", "clinton email", "clinton foundation", "clinton said", "clinton trump", "close", "closed", "cnn", "coalition", "college", "colorado", "com", "come", "comey", "coming", "comment", "committee", "common", "communication", "community", "company", "compared", "complete", "completely", "concern", "concerned", "condition", "conducted", "conference", "confirmed", "conflict", "congress", "congressional", "connection", "consequence", "conservative", "consider", "considered", "conspiracy", "constitution", "constitutional", "content", "contest", "continue", "continued", "continues", "contrast", "contributed", "control", "controversial", "controversy", "convention", "conversation", "core", "corporate", "corporation", "corrupt", "corruption", "cost", "could", "council", "count", "country", "county", "couple", "course", "court", "cover", "coverage", "create", "created", "credit", "crime", "criminal", "crisis", "critic", "critical", "criticism", "crowd", "cruz", "culture", "current", "currently", "cut", "cycle", "daily", "dakota", "damage", "dangerous", "data", "date", "daughter", "david", "day", "dead", "deal", "death", "debate", "debt", "decade", "december", "decide", "decided", "decision", "declared", "declined", "deep", "defeat", "defend", "defense", "degree", "delegate", "delivered", "demand", "democracy", "democrat", "democratic", "democratic national", "democratic party", "democratic presidential", "department", "described", "designed", "despite", "detail", "development", "difference", "different", "difficult", "direct", "directly", "director", "discussion", "disease", "district", "dnc", "document", "dollar", "donald", "donald trump", "donation", "done", "donor", "door", "double", "doubt", "dozen", "dream", "drop", "dropped", "drug", "due", "earlier", "early", "earth", "easily", "east", "eastern", "easy", "economic", "economy", "editor", "education", "effect", "effort", "eight", "either", "elect", "elected", "election", "election day", "electoral", "electorate", "elite", "else", "email", "email server", "empire", "employee", "end", "ended", "endorsed", "endorsement", "enemy", "energy", "enforcement", "enough", "entire", "era", "especially", "establishment", "estate", "europe", "european", "even", "even though", "evening", "event", "eventually", "ever", "every", "everyone", "everything", "evidence", "exactly", "example", "exchange", "executive", "expect", "expected", "experience", "expert", "explain", "explained", "expressed", "eye", "face", "facebook", "facing", "fact", "factor", "failed", "failure", "fair", "faith", "fall", "false", "family", "far", "father", "favor", "fbi", "fbi director", "fear", "february", "fed", "federal", "feel", "feeling", "fellow", "felt", "female", "field", "fight", "fighter", "fighting", "figure", "final", "finally", "finance", "financial", "find", "finding", "fire", "firm", "first", "first time", "five", "florida", "focus", "focused", "follow", "followed", "following", "food", "force", "forced", "foreign", "foreign policy", "form", "former", "former secretary", "forward", "found", "foundation", "four", "four year", "fox", "fox news", "fraud", "free", "freedom", "friday", "friend", "front", "front runner", "full", "fully", "fund", "funding", "fundraising", "future", "gain", "game", "gap", "gave", "gay", "general", "general election", "generation", "george", "george bush", "get", "getting", "girl", "give", "given", "giving", "global", "go", "goal", "god", "going", "gold", "gone", "good", "gop", "got", "gov", "government", "governor", "great", "greater", "green", "ground", "group", "growing", "growth", "gun", "guy", "half", "hall", "hampshire", "hand", "happen", "happened", "happening", "happens", "happy", "hard", "hate", "head", "health", "health care", "hear", "heard", "hearing", "heart", "held", "help", "helped", "helping", "high", "higher", "highest", "highly", "hill", "hillary", "hillary clinton", "hispanic", "history", "hit", "hold", "holding", "home", "hope", "host", "hour", "house", "however", "huge", "huma", "human", "hundred", "hurt", "husband", "idea", "illegal", "image", "imagine", "immediately", "immigrant", "immigration", "impact", "important", "impossible", "incident", "include", "included", "includes", "including", "income", "increase", "increasingly", "indeed", "independent", "indiana", "individual", "industry", "influence", "information", "inside", "instance", "instead", "institute", "institution", "intelligence", "interest", "international", "internet", "interview", "investigation", "investment", "involved", "iowa", "iran", "iraq", "isi", "islamic", "islamic state", "island", "israel", "israeli", "issue", "issued", "james", "january", "jeb", "jeb bush", "jersey", "jewish", "job", "joe", "john", "john kasich", "johnson", "join", "journal", "journalist", "judge", "july", "june", "justice", "kaine", "kasich", "keep", "kelly", "kept", "key", "kid", "killed", "killing", "kind", "king", "knew", "know", "known", "labor", "lack", "lady", "land", "language", "large", "largely", "larger", "largest", "last", "last month", "last week", "last year", "late", "later", "latest", "latino", "launched", "law", "law enforcement", "lawmaker", "lawsuit", "lawyer", "lead", "leader", "leadership", "leading", "learn", "learned", "least", "leave", "leaving", "led", "left", "legal", "legislation", "less", "let", "letter", "level", "liberal", "libertarian", "liberty", "libya", "lie", "life", "light", "like", "likely", "limit", "line", "link", "list", "little", "live", "living", "local", "long", "longer", "look", "look like", "looked", "looking", "lose", "losing", "loss", "lost", "lot", "love", "low", "lower", "machine", "made", "mail", "main", "mainstream", "major", "majority", "make", "making", "man", "manafort", "manager", "many", "many people", "march", "marco", "marco rubio", "margin", "mark", "market", "marriage", "mass", "massive", "mate", "material", "matter", "may", "maybe", "mccain", "mean", "meanwhile", "measure", "medical", "medium", "meet", "meeting", "member", "men", "mention", "message", "met", "mexican", "mexico", "michael", "michigan", "middle", "middle east", "might", "mike", "mile", "military", "million", "mind", "minimum", "minister", "minority", "minute", "missile", "mistake", "mitt", "mitt romney", "model", "moderate", "modern", "moment", "momentum", "monday", "money", "month", "morning", "mostly", "mother", "move", "moved", "movement", "moving", "mr", "much", "multiple", "muslim", "must", "name", "named", "narrative", "nation", "national", "national committee", "national convention", "national security", "nato", "natural", "nature", "nbc", "near", "nearly", "necessary", "need", "needed", "negative", "neither", "network", "nevada", "never", "new", "new hampshire", "new jersey", "new york", "news", "next", "night", "nobody", "nomination", "nominee", "non", "none", "north", "north carolina", "note", "noted", "nothing", "november", "nuclear", "number", "obama", "obama administration", "obamacare", "oct", "october", "offer", "offered", "office", "officer", "official", "often", "ohio", "oil", "old", "one", "one thing", "online", "open", "operation", "opinion", "opponent", "opportunity", "opposed", "opposition", "option", "order", "organization", "others", "outcome", "outside", "overall", "pac", "page", "paid", "paper", "parent", "part", "particular", "particularly", "partisan", "partner", "party", "pas", "passed", "past", "path", "paul", "paul ryan", "pay", "paying", "peace", "pennsylvania", "penny", "people", "per", "percent", "percentage", "performance", "perhaps", "period", "person", "personal", "philadelphia", "phone", "photo", "pick", "picture", "piece", "pipeline", "place", "plan", "plane", "planned", "platform", "play", "played", "playing", "please", "pledged", "podesta", "point", "pointed", "police", "policy", "political", "politician", "politics", "poll", "polling", "poor", "popular", "population", "position", "positive", "possibility", "possible", "post", "posted", "potential", "power", "powerful", "practice", "present", "presidency", "president", "president obama", "presidential", "presidential campaign", "presidential candidate", "presidential debate", "presidential election", "presidential nominee", "press", "pressure", "presumptive", "pretty", "prevent", "previous", "previously", "price", "primary", "prime", "principle", "prison", "private", "private email", "pro", "probably", "problem", "process", "product", "professor", "program", "progressive", "project", "promise", "promised", "propaganda", "property", "proposal", "protect", "protest", "protester", "provide", "provided", "public", "publicly", "published", "purpose", "push", "pushing", "put", "putin", "putting", "question", "quickly", "quite", "quote", "race", "racial", "racist", "radical", "radio", "raise", "raised", "raising", "rally", "ran", "rate", "rather", "rating", "reach", "reached", "read", "ready", "reagan", "real", "real estate", "reality", "really", "reason", "received", "recent", "recently", "record", "red", "referring", "reform", "refugee", "refused", "regime", "region", "registered", "related", "relation", "relationship", "release", "released", "religious", "remain", "remaining", "remains", "remark", "remember", "rep", "repeatedly", "report", "reported", "reporter", "representative", "republican", "republican nominee", "republican party", "republican presidential", "request", "required", "research", "reserve", "resource", "respect", "respond", "responded", "response", "responsibility", "responsible", "rest", "result", "return", "revealed", "review", "revolution", "rhetoric", "rich", "rigged", "right", "rise", "risk", "rival", "rnc", "road", "robert", "rock", "role", "romney", "room", "rubio", "rule", "ruling", "run", "runner", "running", "running mate", "russia", "russian", "ryan", "safe", "said", "said trump", "said would", "san", "sander", "sander said", "saturday", "saudi", "saudi arabia", "save", "saw", "say", "saying", "scalia", "scandal", "scene", "school", "science", "scientist", "scott", "sea", "search", "season", "seat", "second", "secret", "secretary", "secretary state", "secure", "security", "see", "seek", "seeking", "seem", "seemed", "seems", "seen", "self", "sen", "sen ted", "senate", "senator", "send", "senior", "sense", "sent", "september", "series", "serious", "seriously", "serve", "served", "server", "service", "set", "seven", "several", "sex", "sexual", "share", "shift", "shooting", "short", "shot", "show", "showed", "showing", "shown", "side", "sign", "signed", "significant", "similar", "simple", "simply", "since", "single", "site", "situation", "six", "small", "social", "social medium", "society", "soldier", "solution", "someone", "something", "sometimes", "son", "soon", "soros", "sort", "sought", "sound", "source", "south", "south carolina", "southern", "space", "speak", "speaker", "speaking", "special", "specific", "speech", "spend", "spending", "spent", "spoke", "spokesman", "staff", "stage", "stake", "stand", "standard", "standing", "star", "start", "started", "starting", "state", "state department", "stated", "statement", "status", "stay", "step", "still", "stop", "story", "strategist", "strategy", "street", "strength", "strike", "strong", "student", "study", "style", "subject", "success", "successful", "suggested", "suggests", "summer", "sunday", "super", "super pac", "superdelegates", "support", "supported", "supporter", "supporting", "supposed", "supreme", "supreme court", "sure", "surprise", "survey", "swing", "syria", "syrian", "system", "take", "taken", "taking", "talk", "talking", "target", "tax", "tea", "team", "technology", "ted", "ted cruz", "television", "tell", "telling", "ten", "term", "territory", "terror", "terrorism", "terrorist", "test", "texas", "text", "theory", "thing", "think", "thinking", "third", "third party", "though", "thought", "thousand", "threat", "three", "throughout", "thursday", "thus", "ticket", "tie", "time", "today", "together", "told", "told cnn", "tone", "tonight", "took", "top", "topic", "total", "tough", "toward", "towards", "town", "trade", "traditional", "trail", "tried", "troop", "true", "truly", "trump", "trump also", "trump campaign", "trump clinton", "trump said", "trump supporter", "trust", "truth", "try", "trying", "tuesday", "tuesday night", "turn", "turned", "turning", "turnout", "tweet", "tweeted", "twitter", "two", "type", "ukraine", "ultimately", "understand", "union", "united", "united state", "university", "unless", "upon", "usa", "use", "used", "using", "utah", "value", "various", "vermont", "veteran", "via", "vice", "vice president", "victim", "victory", "video", "view", "violence", "violent", "virginia", "visit", "voice", "vote", "voted", "voter", "voting", "wage", "wait", "walk", "wall", "wall street", "want", "wanted", "war", "warned", "warning", "warren", "washington", "washington post", "watch", "watching", "water", "way", "wealth", "weapon", "website", "wednesday", "week", "weekend", "weiner", "well", "went", "west", "western", "whatever", "whether", "white", "white house", "whole", "whose", "wife", "wikileaks", "willing", "win", "wing", "winner", "winning", "wisconsin", "within", "without", "woman", "word", "work", "worked", "worker", "working", "world", "worry", "worse", "worst", "worth", "would", "writes", "writing", "written", "wrong", "wrote", "year", "year ago", "year old", "yes", "yet", "york", "york time", "young", "zone"], "idf": [4.039096488437426, 4.636933489193046, 3.612641104437426, 2.884504932027415, 4.149520306051799, 3.749144267451106, 3.852994208803565, 3.3689388261021795, 2.256469502772643, 3.402038774528524, 3.479480700502003, 2.785035661226458, 2.988592778089347, 2.8493148126310226, 3.532826681207296, 3.841737054278931, 3.9688922297641773, 2.6723093437063596, 4.285229557976335, 3.557793303937757, 2.7695913387989846, 3.6336313803292617, 3.7662973466773555, 3.2778659407733697, 2.937458478852779, 3.527362186735217, 3.495187829707361, 3.7559702325215056, 3.676981821202875, 3.87204240377426, 3.557793303937757, 3.4337874728431044, 3.6833310488815343, 3.9903063242679937, 2.695757076787932, 3.8492277260080883, 3.9688922297641773, 3.762843111809268, 3.0662535870583496, 3.4462720295053497, 3.552191048389087, 5.184228792740428, 4.206977361076586, 3.451309823535307, 3.492552782069356, 3.364298446545677, 2.835578332903136, 3.6581724892453793, 2.9572913180856975, 2.4695340489195496, 1.5725389773176222, 3.7662973466773555, 3.238318643685115, 2.86886850825766, 4.119518055748, 2.281238570885052, 1.8638283713827917, 3.5719378113239215, 2.391312370994977, 3.495187829707361, 3.676981821202875, 3.943786308633101, 4.0482289720006985, 3.999002031235548, 3.2403615453149155, 3.956260482858277, 2.2420480004575802, 3.1301050590448822, 2.8646461233778115, 3.037462436674338, 2.8745262319775184, 3.9192952886248054, 3.4141308202935527, 3.583399254842928, 3.903294947278364, 3.4640164748044215, 3.426370875188055, 3.642763863892534, 3.7423645804657273, 4.741376152560644, 4.338973833983025, 3.0853348251337773, 3.801512252968422, 3.6336313803292617, 4.212368209711462, 3.82692196849379, 4.144457004095252, 3.9072710956580035, 2.395696420103511, 3.078353993992437, 3.4614621949993247, 2.659643659134252, 3.808706528602449, 4.868375843321951, 3.7943693654560415, 4.442291448011051, 3.583399254842928, 4.003378405835347, 2.517993142071225, 4.012189035517501, 3.299325991793139, 3.196354444586083, 3.790816963851674, 4.395771432376158, 3.5494016463015083, 3.891460489631361, 3.4092764418287547, 3.6008415575062704, 3.759400767618295, 3.78727713714655, 3.732280461399101, 2.6050948002869356, 4.572911630428115, 2.012145129378987, 3.7289415601335865, 4.273668735575258, 3.1012221848960966, 3.448787754102597, 4.057445627105622, 3.6738222609125066, 2.993373663689689, 3.0062355773320966, 3.3853518557435094, 2.78115216120006, 3.443762617899924, 3.834302075791413, 3.2631133022983314, 2.635900316514932, 3.899334546062267, 3.7943693654560415, 3.0662535870583496, 3.448787754102597, 3.5383212005249365, 3.9192952886248054, 2.68866484847844, 3.1943994097502797, 2.54721436475497, 3.9233356981618104, 3.899334546062267, 3.4899246596630866, 2.834215006175272, 2.8773671429791223, 2.588974085783563, 2.558525539336493, 3.3436791593429414, 3.6096781393067685, 4.462910735213787, 2.4610554300639977, 3.3436791593429414, 2.7173406484551066, 3.3853518557435094, 3.5031348913998928, 3.348224621714616, 3.552191048389087, 3.1065745616346883, 3.834302075791413, 4.13440666824175, 3.939662591449239, 3.621583041813087, 3.702624251816213, 4.234227003523962, 3.282121266343508, 3.5662559778564904, 3.7697635546538413, 3.451309823535307, 3.735630548284383, 3.1943994097502797, 4.320736246433244, 3.9688922297641773, 3.9946447258665922, 3.443762617899924, 4.170033845884902, 3.404445514559089, 3.451309823535307, 3.82692196849379, 2.898935196856444, 2.7594260670221336, 3.9233356981618104, 3.9479271012991326, 3.397242602265031, 2.496381298955738, 2.2300628382665497, 3.144865474628003, 2.641502572063602, 3.887546590310225, 1.783031411078273, 3.9273924988574245, 4.847756556119215, 3.574790880306328, 1.893165205488757, 3.2424086289366403, 3.887546590310225, 3.9946447258665922, 3.037462436674338, 3.9072710956580035, 3.165523486248425, 3.977402919432086, 4.212368209711462, 2.4251234208379344, 4.223237881948366, 3.642763863892534, 3.4337874728431044, 3.299325991793139, 4.003378405835347, 2.8945842110221176, 3.6833310488815343, 3.7222970174149177, 3.4313091568286374, 3.319041854957556, 4.039096488437426, 3.2652075439014463, 3.1866172693082246, 2.9665793105521683, 2.408075004336151, 3.6458266534230797, 3.841737054278931, 3.3689388261021795, 3.4899246596630866, 4.206977361076586, 3.047529635792062, 3.012729106642645, 3.7732418190301664, 3.081838318075048, 3.8758959730902496, 3.5004788473417765, 3.943786308633101, 3.999002031235548, 4.345127699557404, 3.290686629202431, 2.8660516049865468, 3.532826681207296, 4.483964144411619, 2.838310575040009, 3.448787754102597, 3.1430084638807902, 4.285229557976335, 2.5299812976311946, 3.375940021561163, 3.9646638936546563, 3.895389767771251, 4.190977019730145, 1.7167087681472006, 3.1542026106239427, 4.15460937555927, 4.273668735575258, 3.6458266534230797, 3.87976444986817, 2.7644957863723842, 3.960453361118313, 2.9150527618775124, 3.9273924988574245, 3.3058548506756025, 4.228717347712992, 3.1846811602813583, 2.0205636998445824, 4.071431869080362, 2.922465694266638, 2.5249687558076506, 2.9917774941568664, 3.3058548506756025, 3.87204240377426, 3.192448189619018, 3.232214860747097, 3.735630548284383, 3.952085111447796, 3.6706726520096105, 3.1523281958295923, 3.712412258182376, 3.960453361118313, 4.021077982934747, 3.495187829707361, 3.87976444986817, 3.7156963333835655, 3.0853348251337773, 3.5920823774163892, 3.8380126551879483, 3.903294947278364, 2.7161292612688097, 3.4387626074832185, 3.686520844249634, 4.223237881948366, 3.87976444986817, 4.239767183899577, 4.15460937555927, 3.2652075439014463, 2.9696945778691175, 3.3301654401762186, 3.621583041813087, 3.852994208803565, 3.702624251816213, 2.822027990072028, 3.9355558094965857, 3.815952937123216, 2.945040016305177, 3.7289415601335865, 3.9192952886248054, 3.952085111447796, 4.2177882771808015, 4.11460404094557, 3.960453361118313, 3.5410798229640164, 1.7279121118571936, 4.2016154179352005, 3.780234854521137, 1.977425549106497, 3.8567749316434714, 3.712412258182376, 2.745615426923273, 3.0291498368549723, 3.6738222609125066, 3.9273924988574245, 3.397242602265031, 3.5383212005249365, 4.021077982934747, 3.469144691171341, 3.3573780037011036, 3.519221029151517, 3.815952937123216, 3.621583041813087, 3.5410798229640164, 3.355081791440753, 2.883073292555977, 3.9314658242450604, 3.1065745616346883, 3.530090701388421, 3.411700685440261, 3.699382757892042, 3.404445514559089, 4.505470349632583, 3.9646638936546563, 3.6397104264056437, 3.527362186735217, 4.039096488437426, 3.9355558094965857, 3.411700685440261, 1.8449068147963605, 3.7732418190301664, 2.836943520828476, 3.2971591437080483, 2.6292187771814497, 4.007774017308385, 3.0094770712562675, 4.012189035517501, 3.8051029210991505, 3.4337874728431044, 2.7506154373399783, 3.6801513959641543, 4.0482289720006985, 3.5165219721823524, 3.699382757892042, 4.021077982934747, 3.3596795006893827, 4.030046652917508, 3.2610234373788725, 3.939662591449239, 3.899334546062267, 3.676981821202875, 2.3468225704241763, 2.107575076834212, 3.960453361118313, 3.5410798229640164, 3.834302075791413, 3.0013929528563086, 3.3666159446860395, 3.999002031235548, 2.9389701949381015, 3.557793303937757, 3.815952937123216, 3.3619863067872977, 2.767040317007379, 3.4387626074832185, 3.718991229280418, 3.5219273907492603, 2.9665793105521683, 3.689720846980305, 4.817603517948529, 3.735630548284383, 4.415444197974863, 3.864379531028691, 3.3712671158617704, 1.8253426091499958, 1.8433882116191707, 4.212368209711462, 2.7406402922831594, 3.621583041813087, 3.864379531028691, 3.911263116927541, 3.5057980088193768, 3.667532932004943, 4.039096488437426, 3.960453361118313, 3.939662591449239, 4.0951859550884695, 3.574790880306328, 2.8007222573941575, 2.659643659134252, 3.981685581224087, 3.87204240377426, 3.519221029151517, 4.164865875726459, 3.7423645804657273, 3.040806921397185, 3.2221239577651346, 3.7662973466773555, 3.699382757892042, 3.3900912011074062, 2.6688391262273523, 3.3806348658653707, 2.8660516049865468, 3.9946447258665922, 3.074881768281688, 1.888921167288278, 3.9072710956580035, 3.702624251816213, 3.841737054278931, 3.7943693654560415, 3.214123915098058, 2.5513127311472523, 3.999002031235548, 4.596442127838309, 3.8492277260080883, 2.402751123083401, 3.852994208803565, 3.9688922297641773, 3.776732223969935, 3.891460489631361, 3.6096781393067685, 3.9192952886248054, 2.683964487298108, 3.2101477667184186, 3.981685581224087, 2.9949723850533863, 2.985418172248574, 3.864379531028691, 3.7979344316205377, 4.007774017308385, 1.7153727626044581, 3.6612829116597716, 3.887546590310225, 2.767040317007379, 3.91527113832508, 2.6029302972773625, 2.3543824552321166, 3.0941299565866047, 3.090602616068636, 3.0662535870583496, 3.469144691171341, 3.0766163740938963, 3.808706528602449, 3.406858060964473, 3.7156963333835655, 3.1301050590448822, 3.2631133022983314, 3.469144691171341, 3.7423645804657273, 3.939662591449239, 3.732280461399101, 3.4820814822020605, 2.627001481372802, 3.3368994723575627, 3.7091389328374067, 2.3774111914500358, 3.87204240377426, 3.378284688520417, 3.9072710956580035, 3.780234854521137, 4.052826681249328, 3.2022425872113054, 3.977402919432086, 2.644879052480208, 2.395696420103511, 3.5891796177584276, 3.426370875188055, 3.2778659407733697, 4.250940484497702, 3.3900912011074062, 3.790816963851674, 4.389298917870541, 2.8745262319775184, 3.030806838062602, 3.808706528602449, 3.686520844249634, 3.7256137700409115, 3.9731385206456284, 3.3301654401762186, 2.86886850825766, 4.498250101659096, 3.4899246596630866, 3.2342453182974795, 3.2101477667184186, 3.530090701388421, 4.066748019767936, 3.4092764418287547, 2.722200925337359, 4.0255522633296685, 3.597913297727182, 3.9646638936546563, 1.7806532886733057, 3.6306056594127245, 2.867459064754426, 2.931434364249398, 3.1846811602813583, 3.5776521125873604, 3.1337747879338447, 3.8758959730902496, 3.0062355773320966, 3.903294947278364, 2.702899964300312, 3.749144267451106, 2.8506988958969615, 3.5719378113239215, 3.373600839207991, 2.1309016926518556, 3.689720846980305, 3.3168319093067535, 2.6734687641260946, 3.4538382698886654, 2.669994527857908, 3.9731385206456284, 3.117366033267453, 3.2842557388721407, 4.052826681249328, 2.830136142600451, 3.6397104264056437, 3.064536848439295, 3.1083650724084766, 2.7246399509367176, 3.5031348913998928, 2.934441885313354, 3.8492277260080883, 3.6336313803292617, 4.2016154179352005, 4.302825319866714, 2.9180113439172577, 3.7222970174149177, 3.387718720753776, 4.170033845884902, 3.2424086289366403, 4.483964144411619, 2.534009500459799, 3.3806348658653707, 3.8195959284017174, 3.1674228220520773, 3.655071711567131, 1.84288252260713, 2.932936994133933, 4.085616504072318, 2.5836577521563298, 2.6816225658530275, 3.4820814822020605, 3.458914422920526, 3.3712671158617704, 3.6397104264056437, 3.891460489631361, 2.005579901381172, 4.435511761025673, 3.606723927409337, 2.308245772296363, 2.416114350895568, 2.618181137529829, 3.0923647310620352, 2.2978331832239034, 3.103003129267091, 2.627001481372802, 3.981685581224087, 4.2177882771808015, 3.200276018239265, 2.3220279118109604, 3.4978298391702, 4.043652304973286, 3.6306056594127245, 3.3712671158617704, 3.0888436006634565, 3.887546590310225, 3.3058548506756025, 2.7928482009632516, 3.290686629202431, 3.39485311486765, 3.939662591449239, 3.762843111809268, 3.9859866631234775, 2.7307636687872474, 3.9233356981618104, 2.945040016305177, 3.144865474628003, 4.043652304973286, 3.612641104437426, 3.495187829707361, 4.149520306051799, 3.530090701388421, 2.968135731099826, 2.467643689188381, 3.3806348658653707, 3.943786308633101, 2.558525539336493, 3.519221029151517, 3.887546590310225, 3.8306052139100863, 4.021077982934747, 1.7650979432047968, 1.8556021039131085, 4.124456337388583, 2.675791645542234, 3.348224621714616, 2.8660516049865468, 3.6008415575062704, 2.5943188339424434, 2.77986100543644, 3.451309823535307, 2.904766117167237, 2.2021608813804954, 2.4876729710639536, 3.495187829707361, 4.653600541678259, 3.2527073811372147, 3.5057980088193768, 4.003378405835347, 3.5410798229640164, 2.8099877108399474, 3.563427121656013, 3.5031348913998928, 3.9314658242450604, 3.6275890658732988, 3.5494016463015083, 3.2842557388721407, 3.699382757892042, 2.6493988341858277, 3.9859866631234775, 4.043652304973286, 3.530090701388421, 3.5466200033396316, 3.891460489631361, 2.2626044913401593, 3.8232522396048276, 3.5466200033396316, 3.6275890658732988, 3.5031348913998928, 3.2022425872113054, 4.016623632585367, 3.355081791440753, 3.7222970174149177, 3.5662559778564904, 2.932936994133933, 3.530090701388421, 3.943786308633101, 2.7928482009632516, 4.021077982934747, 4.057445627105622, 3.75255142577272, 2.8945842110221176, 3.212133864690048, 4.144457004095252, 2.7876330652841435, 3.236279906995267, 4.0951859550884695, 3.4387626074832185, 3.192448189619018, 3.9946447258665922, 3.5057980088193768, 3.6961517373105957, 3.864379531028691, 4.402286113397352, 4.100005241524419, 4.2453382289490325, 4.827553848801696, 2.245823014378156, 3.943786308633101, 3.5494016463015083, 3.64889885246005, 3.6581724892453793, 3.7091389328374067, 3.780234854521137, 4.662039410324123, 2.683964487298108, 4.012189035517501, 2.436957878484937, 3.563427121656013, 4.003378405835347, 3.75255142577272, 3.8567749316434714, 3.6961517373105957, 3.689720846980305, 3.3573780037011036, 3.580521555015313, 3.117366033267453, 4.76928494067772, 3.492552782069356, 2.640379607318978, 4.37647822944148, 3.8605700026120227, 3.0030045567506503, 4.0255522633296685, 3.6306056594127245, 3.9946447258665922, 2.8590438678291417, 4.267938060866273, 3.815952937123216, 2.013343451871095, 2.9965736664203595, 4.104847866000206, 3.4742993417600054, 4.052826681249328, 3.7559702325215056, 3.887546590310225, 2.9743857514449976, 3.5949935876238475, 3.9859866631234775, 3.762843111809268, 1.9184693819733774, 3.8492277260080883, 3.1485898737189855, 3.4141308202935527, 2.985418172248574, 2.7234196945314886, 3.196354444586083, 4.170033845884902, 4.007774017308385, 2.5189866841301027, 4.159724476226041, 4.13440666824175, 4.435511761025673, 4.039096488437426, 2.5953912201041964, 2.495409953566106, 3.554988253010148, 3.163627751083526, 3.9479271012991326, 3.91527113832508, 2.548237382747005, 3.2342453182974795, 3.87976444986817, 2.9806750803525617, 2.5081116387412274, 3.348224621714616, 4.190977019730145, 2.5605959334508013, 2.635900316514932, 3.7697635546538413, 2.922465694266638, 3.1769739930364205, 4.483964144411619, 4.129419126730712, 4.422088740693532, 3.586285259732063, 2.4215100474394204, 3.5891796177584276, 1.7135941938830552, 2.498326824861229, 4.0482289720006985, 2.6539391371046106, 3.887546590310225, 3.1101587948625036, 2.6116165625333227, 3.161735602931488, 3.5084682373752556, 3.279991340085683, 2.207242562007493, 3.303673824729242, 2.341814212709804, 3.801512252968422, 3.9273924988574245, 2.9965736664203595, 3.428836967683248, 3.7697635546538413, 3.4563731254918535, 3.052601497890022, 2.5879085555815244, 3.3829905795578297, 3.411700685440261, 3.762843111809268, 3.9859866631234775, 1.9966962184379389, 3.956260482858277, 3.6644030389960154, 3.5246410966208566, 2.6816225658530275, 2.9180113439172577, 1.8076168865508877, 2.627001481372802, 2.669994527857908, 5.128658941585618, 3.56909285919169, 1.82236641647695, 3.9731385206456284, 3.139304755943306, 3.3459493078774805, 3.364298446545677, 3.8232522396048276, 3.466577295666095, 3.6096781393067685, 4.415444197974863, 3.5891796177584276, 3.563427121656013, 4.071431869080362, 3.943786308633101, 2.6292187771814497, 2.0103503338029634, 3.406858060964473, 4.15460937555927, 2.459181015269647, 3.404445514559089, 3.6644030389960154, 4.296925597739525, 2.304228089109751, 3.532826681207296, 3.236279906995267, 2.5741589999984225, 3.163627751083526, 3.8836479498945677, 2.8465523799351127, 3.612641104437426, 4.124456337388583, 3.8051029210991505, 3.6366662840244155, 4.016623632585367, 3.0094770712562675, 3.960453361118313, 2.406297226090152, 3.612641104437426, 4.190977019730145, 2.94200050028728, 2.4242188527075075, 3.1356147148558517, 4.455990292369213, 3.9233356981618104, 3.5494016463015083, 3.3459493078774805, 4.527449256351359, 3.8758959730902496, 3.7156963333835655, 3.7289415601335865, 4.119518055748, 3.887546590310225, 3.8051029210991505, 2.985418172248574, 4.066748019767936, 3.124625593280257, 2.738161976268692, 2.2534160652857533, 3.216117933704923, 3.7423645804657273, 3.749144267451106, 2.8931380791721177, 3.8380126551879483, 3.2181159363675955, 3.864379531028691, 4.279432440292009, 2.0308824560459575, 3.6275890658732988, 3.3391542647446517, 2.761957713943913, 2.8247234094937004, 3.9688922297641773, 4.043652304973286, 2.5804814657379094, 2.1188372031563256, 3.815952937123216, 4.003378405835347, 3.801512252968422, 4.320736246433244, 3.8306052139100863, 3.952085111447796, 3.895389767771251, 3.355081791440753, 2.9254463224047758, 3.808706528602449, 2.091888480666513, 3.2949969807035533, 3.801512252968422, 3.667532932004943, 3.404445514559089, 3.87976444986817, 2.3310480631703436, 1.5798962225080433, 3.3058548506756025, 3.815952937123216, 2.500276143217279, 2.0456337991330305, 2.357760836823744, 2.546192392259277, 3.9946447258665922, 2.7394003665198383, 2.373965882271123, 3.269409230755146, 3.7559702325215056, 3.080094638470221, 3.8836479498945677, 3.2568567646840263, 3.4978298391702, 2.8020406491474157, 2.588974085783563, 3.655071711567131, 2.3817345877217426, 2.1479031222211837, 3.7156963333835655, 4.15460937555927, 4.052826681249328, 2.8247234094937004, 3.416566875091434, 3.6458266534230797, 2.623684728746808, 3.651980518997458, 2.528976777205189, 2.9389701949381015, 3.067973277937876, 4.149520306051799, 2.7064906324310405, 1.4435026259745112, 3.9479271012991326, 3.780234854521137, 2.8745262319775184, 3.443762617899924, 3.364298446545677, 3.2506391280731557, 3.1731425707248646, 3.808706528602449, 3.6581724892453793, 3.8567749316434714, 2.875945678631745, 3.120989225636873, 2.6933874074326134, 3.676981821202875, 3.1012221848960966, 3.9688922297641773, 4.11460404094557, 3.5606062453143714, 3.4820814822020605, 3.9355558094965857, 3.9273924988574245, 2.1949458428663444, 3.6801513959641543, 3.303673824729242, 4.15460937555927, 4.021077982934747, 2.0061749623924827, 3.9072710956580035, 3.891460489631361, 2.500276143217279, 3.532826681207296, 3.081838318075048, 3.9731385206456284, 3.150457287893781, 4.039096488437426, 3.8195959284017174, 3.655071711567131, 4.1804506067431575, 1.579119221691951, 3.9479271012991326, 2.6460070841847063, 3.87204240377426, 3.868203627467094, 3.113755921043353, 3.676981821202875, 2.8126508282594314, 3.0062355773320966, 4.109714055651379, 3.9314658242450604, 3.7058762872025905, 3.7222970174149177, 3.9072710956580035, 3.7662973466773555, 4.990072778299471, 2.4714279888796202, 2.6688391262273523, 4.3328576069655895, 3.956260482858277, 3.91527113832508, 3.0976697832917286, 3.868203627467094, 3.801512252968422, 3.7389918959870876, 4.012189035517501, 4.2016154179352005, 2.154095092469105, 3.762843111809268, 3.2778659407733697, 2.303426485860414, 2.0032031920033253, 3.1047872510605923, 2.648266972152144, 2.4780851699088, 3.527362186735217, 3.9273924988574245, 3.448787754102597, 3.5165219721823524, 2.788934301642115, 3.762843111809268, 3.5662559778564904, 2.8562544657415634, 2.514028815769316, 3.4538382698886654, 3.0030045567506503, 2.6148934633356373, 3.466577295666095, 3.7943693654560415, 3.667532932004943, 3.0976697832917286, 1.7534726088367287, 3.0111017669832694, 1.8926337146444623, 3.487303426183212, 3.040806921397185, 4.071431869080362, 3.451309823535307, 3.404445514559089, 2.7356897871233032, 3.642763863892534, 3.9646638936546563, 3.5776521125873604, 3.8380126551879483, 3.4899246596630866, 3.834302075791413, 4.066748019767936, 2.376548750689377, 4.057445627105622, 4.0482289720006985, 4.228717347712992, 2.9239548978181054, 4.104847866000206, 3.535570167153047, 3.156080545448143, 2.5815391072960447, 2.881643699746383, 4.085616504072318, 3.689720846980305, 3.28639477712089, 3.8567749316434714, 3.5438460764569064, 3.4978298391702, 3.999002031235548, 4.3328576069655895, 4.228717347712992, 3.8758959730902496, 3.702624251816213, 3.841737054278931, 4.129419126730712, 3.580521555015313, 3.735630548284383, 2.2922709916886292, 3.8195959284017174, 3.3666159446860395, 3.9192952886248054, 3.6275890658732988, 3.9314658242450604, 2.4000997737617813, 3.999002031235548, 3.911263116927541, 2.3122796623972994, 3.469144691171341, 3.428836967683248, 4.109714055651379, 2.37138966787935, 4.212368209711462, 3.9646638936546563, 4.0903897828249765, 3.887546590310225, 3.4092764418287547, 3.6275890658732988, 3.9273924988574245, 2.97125585843607, 3.689720846980305, 3.642763863892534, 3.0159917522774613, 3.9946447258665922, 3.4563731254918535, 3.801512252968422, 2.97125585843607, 3.5031348913998928, 4.0482289720006985, 2.496381298955738, 3.977402919432086, 3.144865474628003, 2.460117783488034, 2.7270849399297843, 3.3436791593429414, 2.502229268838161, 3.0159917522774613, 2.828780210189315, 3.801512252968422, 3.999002031235548, 3.519221029151517, 4.250940484497702, 3.87204240377426, 4.228717347712992, 3.790816963851674, 4.196282071959838, 3.4820814822020605, 3.8492277260080883, 3.7289415601335865, 3.4538382698886654, 3.0594042452127748, 4.016623632585367, 3.6366662840244155, 3.911263116927541, 3.4337874728431044, 3.5084682373752556, 3.667532932004943, 3.868203627467094, 3.5466200033396316, 2.3886911375151025, 2.8974827637761287, 3.0888436006634565, 3.8195959284017174, 1.8120189479515254, 3.6306056594127245, 3.3102312252754014, 3.355081791440753, 4.0255522633296685, 4.0255522633296685, 3.4462720295053497, 4.932914364459522, 3.8492277260080883, 3.6096781393067685, 3.956260482858277, 3.7837497966285816, 3.120989225636873, 4.003378405835347, 3.903294947278364, 3.399637812990986, 2.6539391371046106, 3.375940021561163, 3.7457486784499676, 3.655071711567131, 4.100005241524419, 3.6644030389960154, 3.841737054278931, 3.960453361118313, 1.933300744197559, 3.426370875188055, 3.443762617899924, 3.2778659407733697, 4.732243668997372, 3.9314658242450604, 3.91527113832508, 4.175228662762006, 3.017627075618192, 3.6275890658732988, 3.511145615145972, 3.28639477712089, 3.042483367724438, 4.15460937555927, 2.5150184249544822, 3.4337874728431044, 2.671151265985732, 4.124456337388583, 3.2673061805583674, 3.364298446545677, 3.75255142577272, 3.8123231690726374, 1.488231870857628, 3.618593502964721, 3.801512252968422, 4.308760055386529, 2.8060062855407626, 4.449117413081451, 3.3853518557435094, 4.159724476226041, 4.351319669805324, 4.052826681249328, 3.3619863067872977, 1.7763868683596045, 2.4009827760266593, 5.076015208100196, 3.7837497966285816, 4.030046652917508, 3.216117933704923, 3.9859866631234775, 4.308760055386529, 3.952085111447796, 4.435511761025673, 4.159724476226041, 3.762843111809268, 3.9646638936546563, 2.601849800143608, 3.4899246596630866, 2.5996923020035867, 2.884504932027415, 4.003378405835347, 2.8020406491474157, 2.0990476391321033, 3.8306052139100863, 3.78727713714655, 3.4141308202935527, 3.527362186735217, 3.0225491528236206, 2.7125038796544922, 3.248575143852304, 2.731992925241977, 3.735630548284383, 2.958833338437513, 2.7543819201354554, 3.7457486784499676, 3.292839482563532, 3.28639477712089, 3.375940021561163, 3.6336313803292617, 3.5891796177584276, 3.299325991793139, 4.0255522633296685, 3.7058762872025905, 3.655071711567131, 3.5383212005249365, 3.146725940280923, 2.7270849399297843, 3.6366662840244155, 2.6105266441692967, 4.15460937555927, 3.9903063242679937, 2.7234196945314886, 3.8492277260080883, 4.212368209711462, 3.232214860747097, 3.4214568603856255, 2.21601454808033, 3.2201179390382686, 3.399637812990986, 3.815952937123216, 2.7531248489454043, 2.9790990358970957, 3.999002031235548, 3.364298446545677, 3.254779920739187, 3.899334546062267, 3.169325772198164, 2.1610203279024196, 3.28639477712089, 3.4563731254918535, 3.373600839207991, 3.2506391280731557, 3.0094770712562675, 2.9194939238774804, 3.9273924988574245, 3.642763863892534, 4.38286802754025, 3.9859866631234775, 2.9389701949381015, 2.5431327264353216, 3.6738222609125066, 3.7559702325215056, 3.355081791440753, 5.013883426993189, 3.557793303937757, 3.887546590310225, 3.790816963851674, 2.988592778089347, 3.0143590988535762, 3.7559702325215056, 4.052826681249328, 4.185699962629301, 3.5246410966208566, 3.5662559778564904, 3.1846811602813583, 3.402038774528524, 3.7389918959870876, 2.745615426923273, 4.021077982934747, 3.78727713714655, 3.254779920739187, 3.535570167153047, 3.776732223969935, 3.466577295666095, 3.1750564469071487, 3.887546590310225, 2.960377740288887, 3.479480700502003, 3.4820814822020605, 3.6581724892453793, 2.8396795006473505, 3.3146268367484395, 3.999002031235548, 1.5324579980220863, 3.8306052139100863, 4.039096488437426, 2.6804536586480454, 3.6801513959641543, 3.3853518557435094, 3.163627751083526, 2.1155116264299485, 2.808658806989894, 2.7149193397660962, 3.9072710956580035, 3.3712671158617704, 2.9557516719001047, 3.9273924988574245, 4.0903897828249765, 2.9239548978181054, 3.7837497966285816, 3.563427121656013, 3.9479271012991326, 3.606723927409337, 3.7058762872025905, 3.841737054278931, 3.4846890456091413, 3.91527113832508, 3.8123231690726374, 3.224134008693159, 3.519221029151517, 4.308760055386529, 4.807751221505516, 2.1188372031563256, 3.686520844249634, 2.4619939566462623, 3.5410798229640164, 3.9731385206456284, 3.6458266534230797, 3.7423645804657273, 2.8731087972965454, 3.8605700026120227, 3.841737054278931, 3.8836479498945677, 3.606723927409337, 4.034561333272034, 2.7040954217050857, 1.9849727547418798, 3.0209057670798902, 2.832853535576951, 2.7569008131549393, 3.080094638470221, 3.6096781393067685, 3.22614810806486, 4.462910735213787, 3.064536848439295, 4.144457004095252, 2.8888121892249954, 2.9511469055133563, 3.75255142577272, 2.883073292555977, 3.574790880306328, 3.8380126551879483, 2.685137507960472, 4.139419210065295, 4.139419210065295, 3.8492277260080883, 3.4614621949993247, 3.8454753763895377, 3.0559970868911606, 4.565189584334205, 4.052826681249328, 2.1201705366871897, 2.0205636998445824, 3.7697635546538413, 2.853472822779686, 4.572911630428115, 2.4714279888796202, 2.9194939238774804, 3.1788952232143144, 3.1523281958295923, 2.3808684118338936, 3.4640164748044215, 2.9981775160023343, 3.981685581224087, 3.952085111447796, 3.5138301805166408, 1.5417673186508685, 2.563709584124081, 3.0030045567506503, 2.1029743457482755, 4.175228662762006, 4.016623632585367, 4.285229557976335, 2.6898433989978843, 2.539067680187152, 4.062086006662124, 3.4313091568286374, 3.735630548284383, 3.0976697832917286, 4.085616504072318, 3.6738222609125066, 3.323476452025422, 3.939662591449239, 3.6275890658732988, 3.2506391280731557, 4.326778560889206, 2.9743857514449976, 3.9192952886248054, 1.6761007002509296, 3.9355558094965857, 3.4190088787469857, 3.977402919432086, 3.119175988512692, 3.852994208803565, 3.762843111809268, 3.39485311486765, 3.057699214961691, 2.786333519942058, 2.7076903926229448, 4.256574302215959, 2.7644957863723842, 3.1674228220520773, 3.939662591449239, 4.234227003523962, 3.9479271012991326, 4.034561333272034, 2.9949723850533863, 1.795489646000315, 3.7943693654560415, 4.604410297487487, 3.776732223969935, 3.2610234373788725, 3.3596795006893827, 2.3939404934012463, 2.528976777205189, 2.807331666781831, 3.952085111447796, 3.6397104264056437, 4.034561333272034, 2.546192392259277, 2.5605959334508013, 2.972819580412253, 4.435511761025673, 3.3806348658653707, 3.801512252968422, 3.6458266534230797, 3.6833310488815343, 3.6245815448093435, 3.312426615838837, 3.8758959730902496, 3.891460489631361, 2.9003897425674383, 2.8451740199649915, 2.7556405735426517, 3.5920823774163892, 4.185699962629301, 3.702624251816213, 3.87204240377426, 3.64889885246005, 2.2189557266711457, 3.5004788473417765, 2.183508977675398, 2.929933988874164, 4.085616504072318, 3.9314658242450604, 4.030046652917508, 2.9511469055133563, 3.4362719461707663, 2.0468729566645782, 3.2568567646840263, 2.5657907503279054, 3.78727713714655, 3.8758959730902496, 4.604410297487487, 2.2922709916886292, 3.4846890456091413, 3.196354444586083, 4.0255522633296685, 3.732280461399101, 1.888921167288278, 4.345127699557404, 3.557793303937757, 3.651980518997458, 3.061112187557931, 2.0512221402830804, 3.7091389328374067, 4.7505928076655675, 1.984390173892312, 2.913576746849392, 3.5383212005249365, 3.7837497966285816, 3.667532932004943, 2.4188085599792597, 2.2557052688798875, 2.6381374539132882, 3.232214860747097, 3.0853348251337773, 3.4412594876818057, 3.7559702325215056, 3.64889885246005, 2.310664153160645, 3.868203627467094, 3.6929311226105535, 3.081838318075048, 3.834302075791413, 2.912102907231091, 2.548237382747005, 2.4563759643420386, 2.743124765610821, 2.2859518553371503, 3.2842557388721407, 3.6275890658732988, 2.699322142952428, 2.215280603093255, 4.012189035517501, 3.530090701388421, 3.834302075791413, 3.6096781393067685, 1.526545194394973, 4.124456337388583, 3.943786308633101, 3.815952937123216, 3.1769739930364205, 2.988592778089347, 1.622776948312997, 3.303673824729242, 3.2778659407733697, 3.469144691171341, 2.494439550772827, 2.498326824861229, 3.511145615145972, 3.1769739930364205, 4.422088740693532], "coef": [-0.11029150329534734, 0.38675550690125193, -0.08754441962193386, 0.38209683059343735, -0.7613886696703924, 0.5284350648010722, -0.853201297103616, -0.37391841422944466, 0.6549299803833606, -0.13616239928174131, 0.12349102972081864, -0.49324516264716584, 0.5704397657569689, 0.3362749959411345, 0.08411727295110076, 0.6219941420034798, 0.2814642093435219, 0.20711222377778057, -0.4940833449218477, 0.17495199294099412, -0.05022140093687335, -0.4336709727460311, -0.11808358441610807, -0.5751202205471646, -1.4420858023918586, 0.018639022233719223, -0.4190318757147085, 0.326642616729079, -0.18287257446426675, -0.49201888814490324, 0.04394185762847842, 0.11312813253294517, 0.29748443166448046, 0.21795744235643608, 0.20764882385320893, 0.19465689691957064, 0.27464398613541946, 0.47679440162901626, -0.13352935573060362, -0.31916531195054804, 0.3103351588370247, 0.5554998482931184, 0.048425643885962065, 0.2675742730974865, 0.14183928619504316, -0.15513008863447508, -0.25189218925609325, -0.2715612150918641, 0.38688189490325076, 0.6645640876643858, -0.6263234125063862, 0.5708188574766623, 0.39412743114115295, 0.20592260076176025, 0.24398743915858448, 0.5188024965397313, 0.7217346580997811, 0.6691308792411989, -0.4575240058883862, 0.2900010176900656, 0.09638773771243266, -0.34678037781383775, -0.3069469654736331, -0.22066340938500684, -0.005980045963833027, -0.1851514766022609, -0.10381733477326689, -0.08515728850415982, 0.4347797843823558, 0.45240457252466093, 0.2855464834950541, 0.3513840220746921, -0.5843603361951843, -0.0760212292606753, -0.36190833303789965, -0.16241594619962568, 0.43924295128640006, -0.7133798409152141, -0.5291755476381232, 0.6224896335484085, 0.11289320203533484, 0.35004072594071145, -0.22223309472460165, -0.22830212111351667, 0.12171046023004939, 0.19132923468085658, 0.40882816201653116, 0.8849874408182998, 0.21623490651242996, 2.17452859777351, 0.2406075697783848, -0.155597983020433, 0.06649193633598456, 0.6313045679967809, 0.19341607730168348, 0.17371468217621155, -0.7739627606968397, -1.0420353921257544, -2.352145151851413, 0.2571509456594378, 0.31417017055600893, 0.09599263297557176, 0.7691294286814024, 0.19172273710367352, -0.15470841246999378, 0.22095710893430756, 0.4212191115490537, -0.4130294741978303, 0.21229267909296215, -0.4129231671852329, 0.19123568440652536, 0.3684664623029337, 0.48320882460732667, -0.36644802010464317, -0.029976730981087038, -0.24725614821910405, 0.9066507923676603, 0.4381956370831464, 0.08140593108637256, 0.9864439598120177, -0.03402030860755434, 0.029904947673154925, -0.126348872326838, -0.05993375586588819, -0.3217252584230267, -0.1656431757383944, 0.0336673383305556, -0.3599211374961691, 0.33523583432420856, -0.08487393009642742, -0.12057581344477764, -0.023074196632809758, -0.0972538839270711, -0.06419954868479702, 0.018227876010693714, 0.2151277436043133, -0.19530863319563058, -0.24836036754724375, -0.3945272333136756, 0.10149407888910991, -1.4671902419147085, -0.5411167238348908, 0.3563023575606017, -0.3591756183484388, -0.22296041132005656, -0.5860264697848381, -0.9604649510747376, -0.36407315017440034, -0.010718824746852797, -0.49268070130582153, 0.29973342378044376, 0.09203580015049419, -0.07392976647144653, -0.03442957596345697, 0.600008664730252, 0.6051316325352346, 0.35935510522717007, 0.14635902695692773, -0.6346815829921691, 0.8654850414394615, -0.28792533956447486, 0.23964735959281336, 0.15084922130095507, -0.34717315422683775, 0.2091982277912123, 0.9995087139017073, 0.07579162896332295, 0.7909218487438241, 0.1268016368053702, 0.47603267694184814, 0.22964032812131416, -0.4198503379570672, -0.1072541521994375, 0.29901512518971274, 0.08967839291634941, -1.2763668160384056, -0.9018857420686041, -0.21754117429481945, 0.22169881682787235, 0.05051364584465736, 0.15448969768426007, -0.3300770634927696, -0.35119937514857236, -0.20100460424060318, 0.8855609867565435, -2.470230904977294, -0.15588619776987686, 0.799447740088447, -0.430709340805504, -2.80124677156996, 0.1937244779452848, 0.03000762924980108, 0.13571394293706987, -0.03944414528505022, 0.1396166429258038, -0.5849424363602455, 0.01287624984560366, -1.1563529133986301, -0.05658931114652974, 0.08971025988014221, -0.08097012357330106, -0.9536707892475131, 0.1808635105108129, 0.3279836107674235, -1.6837899454547995, 0.2159942931001765, 0.17099384994530814, -0.13077945276599576, -0.24164913412200564, 0.31374408637592777, 0.14244255651828033, -0.8955501080777901, 0.01376157189784475, 0.14045183074586345, -0.030315992736184783, 0.32628511468268123, 0.21522314514643684, -0.755517548828968, 0.38692249041105975, -0.23919721294130078, 0.2883547734329788, -0.28111768698539275, 0.08034509515176087, 0.2928354070804689, -0.4064645291057466, 0.08754247862247377, -1.0707562834048219, 0.1708111042950731, -0.18345212319288987, -0.21450558267769546, 0.5545447217643222, 0.7400094770576213, 0.08348252794709601, 0.03181251799143762, -0.23060602859836812, -0.8744078567441773, -0.2602673881773152, 0.09131477269494823, -0.24522749136156557, 0.3738277496501354, 0.5644066915869049, -1.787083944927544, 0.5418067666086407, -0.2776911061886963, 0.8651606670104828, -1.1636120792405606, 0.12540533584798003, 0.28557429096815024, 0.1838925814962305, -0.8709934932754541, 0.03659163624397291, -0.28506433794346364, -0.03011540804241879, 1.191309651557383, -0.23170848771275546, 1.0909210391044961, 0.4319852940714707, 1.1731722090677936, -0.3571695853586481, 0.2932330421151785, -0.21849990042138412, 0.09934798326993646, -0.07382218950972762, -0.2507122765426086, 0.14257245759986265, 0.790066503085189, -0.41012772077907583, 0.05031484101349338, 0.11434705538312516, 0.26720554687402504, -0.837552738093463, -0.048765573660024625, 0.07589573536608885, -0.3959162885642134, -0.4910214042386092, 0.13949580620225963, -2.9471434497351128, -2.1582431713676784, -0.08332883514762797, 0.26982970278917595, 0.14445404864706143, 0.09944676379669637, -0.14906920534435925, -0.1366504717486918, -0.34825058589646857, 0.015264072372393566, -0.16110454330447888, 0.18026973357246667, -0.7080212205332216, -0.48149812896140004, 0.5986880007221294, -0.12622520948790888, -0.6969371273899798, -2.142019913844022, -0.367289406768922, 0.17307133120131057, 0.8776165529151752, 0.34931833110148747, 0.568556367534608, 0.7095187975309888, -0.1283174042028655, -1.5067529590110946, 0.24750887215313494, 0.002488460661845918, -0.33727282420161087, 0.3341928222300782, 0.20297775080164127, 0.42178796832689436, -0.839340916146901, 0.28111478692242364, -0.6014473665951199, 0.17666512434100498, 0.2405501790280998, 0.35177338422852306, 0.04514584120404118, -0.1199261688534195, 0.038827106673833885, -0.4528066904836887, 0.12622532480276946, -0.6430525669908711, -0.492409852562579, -2.8220381479408165, 0.5874556308533192, -0.11807362583581012, 0.6469404902259983, -0.322383653488182, -0.095985447857492, 0.9160507798625815, 0.8679793895936173, -0.060580379202891985, 0.4003335135726878, -0.42415191997768387, 0.3849001650055759, 0.219413185318528, 0.3247303841392725, 0.11864801034476735, 0.12842067399090876, -1.089412259307513, 0.4590169632324187, -2.0089580702904106, -0.20946648815083924, -0.3033598530279632, -0.35485148249613885, 0.2207737337204521, -0.03068050418241224, -0.12597647866413725, -0.023353011814220025, -0.03637354452901664, 0.4290825075136934, 0.1266712310367472, -0.14950262586063456, 0.40118976961238434, 0.34026247384368796, -2.0600372153820925, 0.022050504790257545, 0.7263883144995565, 0.040209092031204, -0.44577501824179167, -1.006535912009236, 0.05172534501707609, 0.8961158497592618, -0.008841114507702275, -0.9691925459507188, -0.2866640723944873, 0.12775800072634177, 0.018461291942076772, 0.1007185085181136, -0.131516523478465, -0.6111565359022085, -0.6065929191283044, -0.09948427723618762, 0.3242406859996912, 0.14237191934461735, -0.1032465758922759, -0.13235797793519624, 0.46791057943614817, -0.13278679531844384, -0.22351275062046636, 0.5382226577283846, 0.9760888924427694, 0.7335910993721396, 0.7702652370323527, -0.11419485740170142, -0.21580995828853292, -0.5029005972495739, 0.21909870119132932, 0.053417569633402225, -0.07383381893877296, -0.30778428558235194, 0.0881288293327092, 0.10967391254282964, -0.3858738930073815, 0.5962409744523193, 0.7130682717800524, -0.15672138747446956, -1.0230114610365915, 0.7729681500955191, 0.17544900200390703, 0.34163262780960546, 0.1322220251171915, -0.019788392180427317, 0.037227543899493044, -0.8854989044740413, 0.28467024331341134, -0.5534179312959637, -0.12119295991760996, 0.09913746820916156, -0.07300843769284208, -0.38286394979146343, 1.2622038246906373, 0.5536877998540243, 1.684234760016458, 0.4659461070798026, -0.0758250913416877, -0.27514267832807526, 0.6841959786998264, -0.17571765497764522, 0.8799722006802093, -0.35603846411321194, 0.5743523444518109, -0.4881620995273066, 0.47572799200434535, 0.13736021185400835, 0.02611789219363275, -0.17223485685712175, -0.11331883207334496, 0.33631492629751636, -0.1603625886505727, -0.2595388136776795, 0.7619459726739017, -0.3767804397688647, -0.09651353999886958, 1.0501319485484497, -0.17431484698898328, 0.3525249262233546, 0.41684376608739626, 0.11756824750534535, 0.10308395347129094, -0.1441376791997232, -0.44217470580079954, 0.3273956953066892, 0.05940365679382477, -0.08974782809181243, 0.10816794221402043, -0.12220558416681508, 0.15874196276872823, 0.056100643774717865, -0.25022455489783646, -0.577017786064022, -0.37052937856884327, 0.3809058233761602, -0.03258619558794221, -0.1754664314859806, 0.14033641549042622, -0.1643444984942951, 0.5730125334943102, -0.16438583657214792, 0.35250586913663295, 0.10863322763762877, -0.8903580299967123, -0.21864481322072263, 0.17618615485738437, -0.3987304149418268, 0.14893663873942536, 0.3266084785192381, -0.13080763323235045, -0.43857038644236773, -0.32132081190466527, -0.04879518724804931, -0.23520815155305594, -0.1689902441639388, -0.1094441332934331, 0.48121653951228127, 1.4019700731604836, 0.35609538257422685, 0.5279601750107645, -0.3299850321898529, 0.1448753880360248, -0.2889508331550913, -0.11288479072181361, -0.07878553078290651, -0.1564671441195157, -0.004581390267008481, -0.20715135461961492, -0.18706297745301145, 0.018119856787889497, 0.35993167504950374, 0.32602684979601887, -0.28678948635982837, 0.5650379612592434, -0.012742562106427893, 0.19499412663714275, 0.37054547309225583, -0.04197130101870177, -0.2309566715927267, -0.3553029023035871, 0.1484260317546932, -0.8707048878108844, -0.02212636957840375, -0.1796171960749533, 0.6032072356635958, -0.55472261317858, -0.34668147215251977, 0.28891996509542667, -0.22857451137474627, 0.4747247003887464, 1.0574643128261978, 0.5796123096490541, 0.3719783115775562, 0.2570458828296751, -0.25207561502802306, 0.19716163279227622, -1.3666946492680456, -0.5749386996204306, 0.1726465945523945, -0.3528638991714821, 0.3712871304583432, -0.09778583716429709, 0.13490563837198186, -1.3966540739147535, -1.5561047740454903, 0.9806657682696949, 1.1425258993213994, 0.023199326189078273, -1.111320568278022, 0.37957984125849287, -0.6074305170288407, -0.813774738718114, 0.5203037210666791, 0.10092135670180617, -0.24916578171481926, -0.09647175984453946, -0.8234407737856414, 0.11850258534182607, -0.032097475980420224, -0.0988934076241973, -0.7873029618660824, -0.1381795920901946, -0.8377115282267321, -0.6277027857498965, -0.761329805972025, -0.017886754837290155, 0.11456797732583576, -0.3149229765756803, 0.6452351039477652, 0.09051527857788098, 0.9038572869790128, 0.1237512870110467, 0.20632067628248407, -0.0006329814075906035, 0.3610613322406392, 0.12379196244548898, -0.22422042205239817, 0.6365130514709586, -0.005647622389859702, 0.6127430614396411, -0.2424383059050605, 0.279095607125157, -1.686169373455778, 0.012559577842880663, -0.8948385587285621, 0.7928773792324958, -1.3569556516545607, 0.3659515382784163, -0.3854303502325415, 0.6341447023571057, 0.022366368616491418, -0.8774793544779541, -0.3691285647490393, -0.6470994607373839, -1.5227473942921301, 0.4528520207500387, 0.016190592514826838, -0.32965197094015136, -0.9263937638980497, 0.35306910104838785, 0.06953055086607561, 0.16487849936183038, 0.3243252474918389, 0.3948857377221776, 0.5308456960649766, -0.19442720331795724, 0.2251860842645874, 0.27339357894855504, -0.3717472493874544, -0.572331244594377, 0.2540228041833392, -0.10691539080421197, 0.15051640073929035, -0.03371532730859613, -0.2011990289676652, -0.16725789309296976, 0.12456525454723352, -0.13481309696760035, 0.13721287625848363, -0.20247218407546064, 0.04581059201847818, 0.1606562773509774, -0.31806681398876285, 2.4905599059201062, 0.5292320992774574, -0.6742869433948264, 0.058660207121332596, 0.40632086616471774, -0.14680388526157584, 0.18683677766189943, 0.3627803086454683, 0.12047487458150084, -0.04248619023076158, -0.10049915175930985, -0.9976206878539438, 0.9677995325202461, 0.24533558956972115, 0.37484480272084136, 0.49548487688544485, -0.19829763772413364, 0.11352207713548254, -0.46757745564012476, 0.2811350693458096, 0.7166490263973851, 1.1311243562348958, 0.14540574128961475, -0.021338996687159217, -0.07519355038115992, -0.7918911004636541, -0.09760523719313703, 0.12608075727181114, -0.0023839599202456017, 0.28445172482985154, -0.05212603575325854, -0.20734625650210245, -0.24554382407630837, -0.10868087138942435, -1.0673265400318996, 0.0037656670750689015, -0.39586073405362665, -0.015878882481711848, -0.2808809013002792, -0.9515783984110162, 0.04450059422662405, -0.1596020902510312, 0.18493546965949093, -0.517004196082526, -0.31683808705329286, -0.02919339122940904, 0.08998384054446878, -0.13924122777611037, 0.12920677319788815, -0.1223776317270782, 0.30941955925210274, 0.9043760461009219, 0.39478634063336343, -0.3919732594058642, 1.2595076667023462, 0.12079778484267338, 0.42463561935697053, -1.374617164192433, -0.6982046852776197, -0.2988466550367112, -0.6337752281588347, -0.3406142498168094, -0.563388255702542, -0.13618103017340077, 1.1256635025128128, 0.45139562077934525, -1.2770404048258517, -0.01478813669861453, 0.6416542077708286, -0.20730459274454371, -1.141256702351316, -1.026432874881218, -0.43999846117247, 0.7402705728547074, -2.089237919366269, 0.4236865842169208, 0.04354179003289389, -0.5260885155344872, -0.6086713471176255, -0.29820831424665767, -0.19016042953307105, 0.5221687858401319, -0.435242731606342, -0.18447969710111062, -0.5279905414961998, -0.4768693381491738, -0.07057951646864695, -1.4386008771666723, 0.14200664138523364, -0.2020800553315375, 0.29270371567949843, -0.7384552154952227, -0.28159518143123724, -0.57706246149062, -1.0750101480560894, -0.5426051215518101, 0.25022764912006357, 0.26848239084033027, 0.3563983085189494, 0.3363884777727027, -1.196377560617838, 0.02191173032322719, -0.14065740579068536, 0.43083500928203355, 0.24265467500381147, -0.08579816507557614, -0.6403692692152102, -0.2744393351742981, 0.12782759181986109, -0.7674540082866148, -0.7073127097735605, -0.3722979006041012, -0.4528749263190175, -0.3099552180866442, -0.7668543347910343, 0.5076598233607815, -0.8328017254422164, 0.18209514213132558, -0.5880668432458817, -0.27774641379398224, -0.28138781272735724, -0.0936212672946024, -0.6948224155998731, -0.016032553600851717, -0.9509895238746164, -0.08621885818606637, 0.04501126865461146, 0.40127851896653316, 0.2788187514071125, -0.4374551291744557, 0.517794387593874, 0.046890021704598724, 0.08958332566280337, 0.1535686854055609, -0.09297197910535278, -0.7237129988832721, -0.5825938393543841, 0.28411899548360975, 0.5275867496524848, -0.039327477953695254, 0.19094945562698523, -0.3593519036321295, 0.07666520618171357, 0.0277865834019484, 0.6351649869568765, 0.5374168328414002, 0.3610709462971338, -0.07166622423535207, -0.5790175812858729, 0.062473974082528964, -0.15931791863543557, 0.6411643604301134, -0.8140662919697977, 0.1324997693918249, 0.5637854996259655, 0.6400818469910424, 0.19782190310022926, -0.3895233826038729, 0.047400840644783, -0.10067707651345463, 0.40800977619166867, -0.16549730791402936, 0.17032110023452943, 0.2586494932277327, -0.21490696937238143, 0.02749402721426803, 0.12514334732658525, -0.31046930640695564, 0.174732915250468, -0.392984444365999, -0.48663862341637787, 0.9639900319561567, -0.35196685859523463, 0.7107542126759164, 0.2539458075030102, 1.1891482210797804, 0.11993893006262943, -0.49454508258451646, -0.2576133259771878, -0.32037856249873753, 1.2629388897613558, -1.014608251747422, 0.1588742570061812, 0.06969549206816043, -0.08910063584802712, -0.1580332447304616, -0.6947483101339332, -0.6155102215386572, -0.5102930408720953, 0.5924332806216477, 0.7285487561327493, -0.4563296587504186, -0.0318853486811515, 0.5832803767565649, -0.4816720528467479, 0.06249197176461724, -0.06942347744306421, -0.39793769604002016, 0.16385279523296745, -0.7318391722439401, 0.19129429669694062, -0.500056507695783, -0.843856295349227, 0.19357089282667522, 0.8401568478995725, -0.22867108502587855, 0.16861533240528187, 0.2825460912393027, -0.07374524998667048, 0.057516656873149025, -0.6838727681094352, 0.15942385997804775, -0.8806357499387302, -0.9105013551956247, 0.5124378252943631, -0.028414991313087102, -0.7011423484337822, -0.00601279228637012, -0.48868971061410904, 0.27620426930515235, 0.1312314406606501, 0.9934051792391057, 0.18626796144845478, 0.7237634839773235, -0.8368678536552914, 0.44318617765385904, 0.04547286902751122, -0.13471224137686483, -0.6004796878747864, -0.0003768843663046915, -0.5570883741294894, -0.50034349189914, 0.29978679628996685, -0.3345405140992516, 0.20568046693578249, -0.4749513866452012, -0.20209093319812052, -1.135324430738472, 0.5708506855178082, -0.706465389956191, 0.08651127070711134, -0.07208339674703895, 0.13823969882340945, -0.08059323771264094, -0.1667843510223128, 0.5854888279400926, -0.12157517497074972, -0.7146885997533743, -1.1810070554438807, -0.06538960956696212, 0.8371015169727624, -0.0203311047419724, -0.032380725844774035, 0.3469416665433916, -0.45411161407763817, 0.7745314348138725, 0.049675891711240046, 0.05866942752797655, -0.29302553683755045, -0.31823852851513784, 0.28002627968173266, 0.3151705416918887, 0.032605464321447813, -0.30616462886789314, 0.14130245268924724, -0.6872506890626611, -0.044417396461119106, -0.5019401462091699, 0.181374447522587, -0.2729658026002076, -0.19737180047481984, 0.2974939428756298, -0.14670809729667728, 0.7297109564319458, -0.6001340807335428, -0.9263937638980497, -0.480436963978724, -0.7686731528634314, -0.7133147551169262, 0.41115322136131427, -0.8243779710951721, 0.05642671867584885, -1.7731902615698825, -0.8098006908687195, 0.6226791260183647, 0.09897201579900963, 0.6223185948188966, 0.16588147670133305, 0.4428869697690182, 0.23987514175067104, -0.15935433998443346, 2.3962173525605532, -0.9190372544762112, -1.3258514592469748, -1.3137731287442562, -1.0792632822450972, -0.24588513795595812, 1.6328255836902739, 3.9144142511166096, 0.211539542601566, -0.12870219244068196, 0.5103679017359292, -0.017518463967072954, -0.8994326858599645, -0.12384629808130442, -1.043741347649025, -0.15447553616890758, 0.5066417818744067, -0.4275004356751881, -0.3162568027065077, -0.2239921788541154, 0.22698541203497896, 0.6294592720782131, -1.0221407643570029, -0.22293038634000797, -0.17707975575620954, 0.06097633051895439, 0.34487769553262126, 0.28822146414131355, 0.1483471764025098, 0.17387196539383734, -0.16988763005981514, 0.06046572302839622, -0.22142514671389377, -0.3500282015990325, -0.5338788346674923, -0.16117517400759337, 0.21666975812285452, 0.1759895396929124, -0.20949422640001003, -0.675537227423388, -0.24362378524494735, -0.2981287222499962, -0.5856147448574, 0.32326533484483927, -0.5559750233710301, 0.04397797857035585, -0.3156838123427841, -0.6140946246042793, -0.3578759654467251, -0.5118587245574243, -0.33037248072775044, -0.3837126484162818, -0.13893341914580784, 0.14770278387670166, 0.35207505164412234, -0.7061810646992439, 0.5304862042039495, 0.34810403449606764, -1.0919761247495092, -0.46750735722495473, -0.27282572905504393, -0.10977912042715629, -0.02008630561323046, -0.0928879948242254, -0.7539614523206425, -0.5569526051019404, 0.6135256986956625, -0.3453064902389778, -0.24160938663399664, 0.1908573719824753, 0.41341935585878775, 1.0702401009219642, -0.3654060893235047, -0.8762335569164348, -0.606418469680677, 0.008638684568790602, -0.0757125834315532, 0.17104946297296994, 0.04142375088810817, -0.03489114478657847, 1.052916262889069, -0.23800766662971748, 1.9119139154815572, -0.6482438794910705, 0.0896292726367068, 0.02187626906407302, -0.7752239182020471, -1.6352238438562254, 0.016814835451534185, -1.0419000170740234, -0.9290164943195611, 0.04751759598915215, -0.440572370337721, -0.01778643280240136, 0.3227216648573922, -0.3433576490968153, 0.19298070974053783, -0.12274044936814833, -0.1328273820051671, 0.6001160197824456, 1.439923609975811, -0.5765757079139344, 1.091658671263925, 0.219017503808362, 0.11033115704428018, 0.3901290132977171, -0.029096827236541622, -1.4448262702054042, -0.8053984197603936, -1.2738439721005146, -0.3291353305104634, -0.30571943368442095, -0.5890069262965962, 0.8270102591519646, 0.058492247394086906, -1.0603364789890655, 0.12742726613296182, -0.839786351706413, 0.04414598463610146, 0.062148168442270564, 0.22160310903472807, 0.056352541227775534, 0.045075655933858115, -1.8574348797839255, 0.12840861647359178, -0.15054453826418432, 0.16111590960743358, -0.33693974651293923, -0.49280881321268344, -0.08771905041022153, 0.1520808389174837, -0.40871210321578083, -0.17885509295646876, 0.4063349901259492, -0.3975356673264502, -0.371162985954317, 0.32935077455099354, 0.8073737991674577, 0.10872112223875999, 0.20514027412618818, 0.5639337326557349, 0.24869579239331294, -0.7193772045052034, -0.23423151591965155, 0.4961839251024226, -0.7396642566733136, 0.0023077857401246037, 0.33344999523263125, -0.6836232767175796, -0.28281747714486805, 0.8145015465017933, 0.0827682387944445, -0.3301717822468275, -1.4933101554058519, 0.39165777667565627, 0.9718110847140038, -0.09480237415889982, -0.8259102165678301, 0.22525564449831775, 0.4770920335499536, -1.7947802360752698, -1.9034582102779003, 0.35196446419589833, 0.09918662932919517, 0.14030233124214808, 0.3243377329073771, -0.2950375702056584, -0.43241097777424004, -0.14881414231090764, -0.4655771275531064, -0.00628402429882053, -1.0436859338916729, -0.4400081327260132, -0.5372855469303288, -0.06092056330037988, -0.12331662696265248, 0.6468579463839316, -0.3573787094011857, -1.1338512070648297, 0.1475237367153627, -0.2943516934753842, -0.2721748709768773, 0.7593098575720407, 0.03806279621437576, 0.27694405970982483, -0.5955162798995128, 0.17765518063031827, -0.5182500172551994, 0.07029468805802273, -0.25829441809296433, -1.7763640132527967, 0.5180309374191808, 0.04554101312838051, 0.952446543960722, 0.31550052255071986, 0.17428060207856072, 0.5230615433937225, -0.07566096646311372, 0.19459424042890325, -0.0889455441691204, -0.3200225220875561, -1.2562252562139893, -0.24721116146245262, 0.04024208352859324, -0.36859377343429756, -0.7341221196518078, -0.10792846572591724, -0.4958580715928809, -0.16648371642119805, 0.6487190322329435, 0.5275948517620831, -0.3165931576149123, 0.3534118670531561, -2.988377292024725, -0.08080676612715953, 0.357309389692058, -0.549049506951237, -0.35714429587267327, -0.2825055327434831, -0.05226462302473259, 0.31036159213213055, -0.0025134258343988583, -0.17654448762210553, -0.16664014537303634, -0.10953146886180895, -0.3118995830879624, -0.5041612992329422, -0.0675487466507967, 0.08326592056698635, 0.6870626576950474, 0.14210330669064808, -0.28555876787688, 0.2541664007950363, -0.25812121973239466, -0.4707434588145481, -0.1332248073992189, 0.7044664761491991, 0.6334693430648977, 0.0798218690680682, 0.04374386581616192, -0.7753523193369752, -0.450974617996408, 0.11836133154659613, 0.646112279946242, 1.020137395503744, -0.41685611298980163, -1.0623455454240716, -0.15921019067294376, -2.2284728401364715, -1.2506720235232949, 0.5452931578118634, -0.5609196984664769, -0.7685505014458326, -0.6405198151688141, -0.554572291241396, 2.4882040740475753, 1.5036803985805962, -1.543411162844515, -0.06263089176115205, -4.90115853853415, -0.09663498633720817, -0.17953403436746726, -0.36298131295362324, -3.0557954489212924, -0.27732310466707843, -1.3116885533990772, 0.22943154851425782, 0.07940891221926195, 0.20367287511000753, 0.030631725555272753, -2.170543340003979, -0.9437379113655638, -1.54776457804047, -0.1172053113681108, 0.0318919457516247, -0.259288518709769, 0.3155765278051185, 0.5553800042793888, -0.5114184467874651, 0.3778910777407494, -0.059632688590359154, -0.09443401027377112, -0.21022204155046084, 0.11488706833009454, -0.14994993750214655, -0.721261808771397, -0.6616383515904035, -0.16512276327448222, -0.6878725441646267, 0.8059414497215226, 0.11070121029884596, -0.33383177248102996, -0.054274345331735946, -0.7320199786752869, -0.20183947814540273, -0.048635297822565315, 0.5068901182958484, -1.2206851604816884, -0.26189013845930303, -1.115605765890203, -0.7533460312482118, 0.27989244700871885, -0.5514774588744461, -0.4118325663099756, 0.4211716464964328, 0.5387955823836933, -0.13503569556749967, -0.016937324396503004, 0.138283172402179, 0.13514865686043975, 0.05577521773667692, -0.6875904106665113, 0.42037914916877644, -0.372341137996353, -0.2829573007444348, -0.2794922204701153, 0.8851114360824545, 1.0212818975902076, 2.131386702548126, -0.4288971245210063, -0.7049852577601499, 0.2247482104493976, 0.09115178207925935, 0.5926083635738307, -0.12492754568444073, 0.22175933827168437, -0.027768165078289064, -0.13260004989871715, 0.5351141130629228, -0.23145539030236717, -0.21096599189480406, -0.3088358366864256, 0.14555088657551485, 0.1053033553072366, 0.49070251174418755, -0.07671806466934086, -0.24642483476398344, 0.42788721967202076, -0.33989777000362936, -0.524235260122163, 0.719137662915213, 0.17120233139384092, 0.447904462848371, 0.4787168797996566, 0.23458627868313012, -0.33912205825646446, -0.018918998906379332, 0.06164390752875475, -0.37950870070223486, 0.3538259008915187, 1.176557500846574, -0.10313408142502653, -0.33406263267048075, 0.13755672786287226, 1.8372975948177739, -0.4917666227886523, -0.8534592889095489, -0.07729900501003478, 0.3457770392915452, 0.2248629786124514, -0.3357211091767102, -0.415252112776893, 0.5458835656970796, -0.3488181556171514, -0.9319979778820308, 0.08990697495089323, -0.0655089454121502, -0.26281348319071185, -0.750823489954629, -0.34117908781419004, 0.29266369213233395, -0.5515032594801699, -0.5235440572572443, 0.26937232011364076, -0.12513516896535112, 0.3706452537650425, 0.5370585054239052, -0.10755476412850253, -0.1285141872828512, -0.18961478367011697, -1.7281670106468128, -1.1579189222449875, 0.8708544069021137, -0.8681447004890344, 0.04005547884252848, -0.11399868568393509, 0.39594686644845895, -0.1750742627705422, 0.4990753643509094, -0.1266175478997388, -0.1784023670050366, -0.44964203143813886, 0.22280449488614554, -0.43639466889290174, -0.0733081027179738, -0.42803524135667614, 0.3845401620307222, 0.5752082902820862, -0.3342361440977425, 0.015082261533279101, -0.27355056209372636, -0.387585584147087, -0.37012273718142763, -0.2049146469967955, -0.4764261292307611, -1.093646160353998, -0.3229908362785417, -0.6284455390914696, -0.5198280804923608, 0.3439035033581386, 0.04028595880590888, -0.9340841263444244, -0.08972134370323685, -0.02990079223067254, -0.8038224492150141, -1.0055203013655776, 0.4080360334153382, 0.18090993208010928, -0.2137484657223561, -0.5238241175199763, 1.1021434488149926, 0.9872632356677543, 0.20190858011198903, 0.3872791220016629, -0.44619612578331536, 0.5066291550899633, -0.5672304959301954, -0.2076755913645944, 0.08562841489152688, -1.3078421607176989, 0.12782462965821043, 0.05823347588688125, -0.2063130287161261, -0.8567242477090684, -0.8531843354949937, 0.1346363116679155, 0.18524560744803534, 0.033561145113479005, 0.5969984552854338, 0.18978555521702808, 0.15277593355420171, -0.7760738275212697, -0.6056534104121695, -0.11421377447537631, -0.4234271161655476, 0.07254672301254782, 0.8086534012595533, -0.02816058152196798, -0.1245858741606221, -0.29882233672365316, -0.08676958605935972, -0.30817042985055215, -0.33863554954529296, -0.14276908637067504, 0.3113011872616918, 0.37006260961747345, -0.5988706724176495, 0.03993788134426277, 0.3212811806020056, -0.7210813154411381, 0.1920021766301217, 0.12446710264511222, 0.10736619565228914, -0.2599910346960107, 0.39196317914710926, -0.3646243952545414, -0.9465422313585888, -0.7957445758232805, -0.4576955259434309, -0.2679407274565543, 0.26845010130046176, -0.4724387110859428, -1.0158180752145725, 0.32983579839003263, -0.7907262610884063, -0.6462069439208888, 0.814769040074053, -0.22394481855383985, -0.28029474413303085, -0.15784433561762393, -0.1307537501739887, 0.17426137879153392, 0.27424689373514594, -0.005468070311784567, 0.21871138024450976, -2.3974763011305877, -0.017118936651591636, -0.023084338248535407, -0.40154430673490865, -1.162814484156453, -0.13916508007195286, -0.6777008006615899, 0.8272463543975286, -0.0422529075766173, 0.07769816386214638, -1.1232146901887112, -0.2791068258782656, 0.051484400077829284, -0.11369103898516253, 0.03840152067369406, 0.32041277764131004, 0.09468743405354968, -0.5139975536774717, 0.9067252541225362, -1.3383351121208809, 0.25858896140432347, 0.6386827688126763, -0.14930702155065875, 0.04215630235811067, -0.23935256686780274, 0.10086675309681867, 0.03665517398907549, -0.49317157604768636, 0.14627601222606276, 0.31922737305289584, -0.18066644527219897, 0.4325352303690978, 0.5538139872021965, 0.5579554792010113, -0.2159731775991908, -0.3691574080330597, 0.45183078184077186, -0.15002846501902542, -0.3253503273954104, 1.4243367628814216, -0.22452672168753068, -0.2983100182300045, -0.14055105322129066, 0.16172901402379558, 1.5429238433856844, -0.6675218406729944, 0.3089093601445917, 0.11289826466867546, -0.40832695972420624, -0.8067372890740285, -0.13763453702627562, 0.5354388704731907, 0.9034751355795946, -0.9671857282241415, 0.9135213493769496, -1.0901566025209202, 0.0865686967717155, 0.13597144261455635, -0.38713393671029195, -0.10229665143281712, 0.43665714089554597, 0.4324521872623928, 1.5382561277168354, -0.1958530699552239, 0.006359132668031784, -0.3752375314854738, -0.5449196340846063, -0.5058181216496898, 0.7373344040662245, 0.2551260836794117, 0.08922193733026346, -0.32553758359009133, -0.27730750047716374, -0.5199805200702071, 0.27557970345641547, -0.05296053689771091, -0.7767153986277511, -0.2194003050098916, 0.27274154662922545, 0.5265559091366399, -0.11590758902584997, 0.06759716885987727, 0.5368499818080421, 0.2903170349463516, -0.9123052709574628, 0.04716268542271259, -0.8478735942596319, 0.4159150098743729, -0.10609026140639216, -0.5439046544767889, 1.5547827111621453, -0.05082700144432091, 0.42062024846461277, 0.1082470821755147, 0.1764805664733863, -0.2894850681027002, -0.7682554149473527, 0.372574861000505, 0.06015652540984077, 0.2635861889546162, 0.00948097532901248, -0.05396107853317292, -0.06676328152680586, -0.2938042334447272, 0.2478470363477567, 0.7942161016984753, -0.36717340125943027, -0.19890602735888355, -0.05085802578822267, -0.27239277895900066, -0.10378177979971173, -0.05502448027024729, 0.43004539584249163, 0.06698654735632605, -0.28940691847764904, -0.18656609083924663, -0.6746923701321744, -0.36290673628392633, 0.44995147957606074, -0.04958798166142411, 0.010847931664440097, -0.7569562297662944, -0.751067048653061, -0.10408353545873655, 0.30251110160701616], "intercept": 1.7302645159318197, "metrics": {"accuracy": 0.9075081610446137, "precision": 0.8863636363636364, "recall": 0.934640522875817, "f1": 0.9098621420996819}, "stopwords": ["a", "about", "above", "after", "again", "against", "ain", "all", "am", "an", "and", "any", "are", "aren", "aren't", "as", "at", "be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "can", "couldn", "couldn't", "d", "did", "didn", "didn't", "do", "does", "doesn", "doesn't", "doing", "don", "don't", "down", "during", "each", "few", "for", "from", "further", "had", "hadn", "hadn't", "has", "hasn", "hasn't", "have", "haven", "haven't", "having", "he", "he'd", "he'll", "he's", "her", "here", "hers", "herself", "him", "himself", "his", "how", "i", "i'd", "i'll", "i'm", "i've", "if", "in", "into", "is", "isn", "isn't", "it", "it'd", "it'll", "it's", "its", "itself", "just", "ll", "m", "ma", "me", "mightn", "mightn't", "more", "most", "mustn", "mustn't", "my", "myself", "needn", "needn't", "no", "nor", "not", "now", "o", "of", "off", "on", "once", "only", "or", "other", "our", "ours", "ourselves", "out", "over", "own", "re", "s", "same", "shan", "shan't", "she", "she'd", "she'll", "she's", "should", "should've", "shouldn", "shouldn't", "so", "some", "such", "t", "than", "that", "that'll", "the", "their", "theirs", "them", "themselves", "then", "there", "these", "they", "they'd", "they'll", "they're", "they've", "this", "those", "through", "to", "too", "under", "until", "up", "ve", "very", "was", "wasn", "wasn't", "we", "we'd", "we'll", "we're", "we've", "were", "weren", "weren't", "what", "when", "where", "which", "while", "who", "whom", "why", "will", "with", "won", "won't", "wouldn", "wouldn't", "y", "you", "you'd", "you'll", "you're", "you've", "your", "yours", "yourself", "yourselves"]};
+
+// ===== Text cleaning pipeline (mirrors the Python clean_text) =====
+const STOPWORDS = new Set(MODEL_DATA.stopwords);
+
+// Lightweight suffix-based lemmatizer approximation (WordNet lemmatization
+// isn't available client-side; this covers the common English inflections
+// that matter most for this vocabulary).
+function lemmatize(word){
+  if (word.length <= 3) return word;
+  const irregular = {
+    'said':'said','was':'was','has':'has','is':'is','media':'medium',
+    'people':'people','states':'state','women':'woman','men':'man'
+  };
+  if (irregular[word]) return irregular[word];
+  if (word.endsWith('ies') && word.length > 4) return word.slice(0,-3) + 'y';
+  if (word.endsWith('ing') && word.length > 5) {
+    let stem = word.slice(0,-3);
+    if (/([a-z])\1$/.test(stem)) stem = stem.slice(0,-1); // running -> run
+    return stem;
+  }
+  if (word.endsWith('ed') && word.length > 4) {
+    let stem = word.slice(0,-2);
+    if (/([a-z])\1$/.test(stem)) stem = stem.slice(0,-1);
+    return stem;
+  }
+  if (word.endsWith('es') && word.length > 4) return word.slice(0,-2);
+  if (word.endsWith('s') && !word.endsWith('ss') && word.length > 3) return word.slice(0,-1);
+  return word;
+}
+
+function cleanText(text){
+  let t = String(text || '');
+  t = t.replace(/https?:\/\/\S+|www\.\S+/g, ' ');
+  t = t.replace(/<[^>]*>/g, ' ');
+  t = t.toLowerCase();
+  t = t.replace(/[^a-z\s]/g, ' ');
+  let tokens = t.split(/\s+/).filter(Boolean);
+  tokens = tokens.filter(tok => !STOPWORDS.has(tok) && tok.length > 2);
+  tokens = tokens.map(lemmatize);
+  return tokens;
+}
+
+// ===== TF-IDF + Logistic Regression inference =====
+const TERM_INDEX = {};
+MODEL_DATA.terms.forEach((term, i) => { TERM_INDEX[term] = i; });
+
+function classify(rawText){
+  const tokens = cleanText(rawText);
+  const bigrams = [];
+  for (let i = 0; i < tokens.length - 1; i++){
+    bigrams.push(tokens[i] + ' ' + tokens[i+1]);
+  }
+  const allGrams = tokens.concat(bigrams);
+
+  // raw counts per matched vocab term
+  const counts = {};
+  allGrams.forEach(g => {
+    if (TERM_INDEX.hasOwnProperty(g)) {
+      counts[g] = (counts[g] || 0) + 1;
+    }
+  });
+
+  const matchedIdx = Object.keys(counts).map(g => TERM_INDEX[g]);
+  // tf-idf raw values
+  const raw = {};
+  let sumSq = 0;
+  matchedIdx.forEach(idx => {
+    const term = MODEL_DATA.terms[idx];
+    const val = counts[term] * MODEL_DATA.idf[idx];
+    raw[idx] = val;
+    sumSq += val * val;
+  });
+  const norm = Math.sqrt(sumSq) || 1;
+
+  let z = MODEL_DATA.intercept;
+  const contributions = [];
+  matchedIdx.forEach(idx => {
+    const tfidfNorm = raw[idx] / norm;
+    const contrib = tfidfNorm * MODEL_DATA.coef[idx];
+    z += contrib;
+    contributions.push({ term: MODEL_DATA.terms[idx], contrib });
+  });
+
+  const prob = 1 / (1 + Math.exp(-z)); // P(FAKE)
+  contributions.sort((a,b) => b.contrib - a.contrib);
+  const fakeEvidence = contributions.filter(c => c.contrib > 0).slice(0, 6);
+  const realEvidence = contributions.filter(c => c.contrib < 0).sort((a,b)=>a.contrib-b.contrib).slice(0, 6);
+
+  return {
+    label: prob >= 0.5 ? 'FAKE' : 'REAL',
+    confidence: prob >= 0.5 ? prob : 1 - prob,
+    probFake: prob,
+    matchedTermCount: matchedIdx.length,
+    fakeEvidence, realEvidence
+  };
+}
+
+// ===== UI wiring =====
+const input = document.getElementById('article-input');
+const charCount = document.getElementById('char-count');
+const analyzeBtn = document.getElementById('analyze-btn');
+const verdictArea = document.getElementById('verdict-area');
+const stampEl = document.getElementById('stamp-el');
+const gaugeArc = document.getElementById('gauge-arc');
+const gaugeNeedle = document.getElementById('gauge-needle');
+const gaugeValue = document.getElementById('gauge-value');
+const fakeEvidenceEl = document.getElementById('fake-evidence');
+const realEvidenceEl = document.getElementById('real-evidence');
+const analystNote = document.getElementById('analyst-note');
+
+input.addEventListener('input', () => {
+  charCount.textContent = input.value.length + ' characters on file';
+});
+
+const COLD_CASES = [
+  "BREAKING: Scientists SHOCKED after discovering this one weird trick doctors don't want you to know about!!!",
+  "The Federal Reserve announced today it will hold interest rates steady, citing stable inflation data from the Bureau of Labor Statistics.",
+  "Neil Armstrong: Their Ships Were Far Superior To Our - Boy, Were They Big, claims viral post citing anonymous NASA sources.",
+  "Sanders Trounces Clinton in W. Va.. Democrat Bernie Sanders picked up more delegates in the two states than Hillary Clinton. The Vermont senator is still way behind, but says he is not giving up, calling his win in West Virginia significant."
+];
+
+document.querySelectorAll('[data-case]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const idx = parseInt(btn.getAttribute('data-case'), 10);
+    input.value = COLD_CASES[idx];
+    charCount.textContent = input.value.length + ' characters on file';
+    runAnalysis();
+  });
+});
+
+function evidenceRow(item, maxAbs){
+  const pct = Math.min(100, Math.round((Math.abs(item.contrib) / maxAbs) * 100));
+  return `<div class="ev-item"><span class="ev-word">${item.term}</span><span class="ev-bar-wrap"><span class="ev-bar" style="width:${pct}%"></span></span></div>`;
+}
+
+function runAnalysis(){
+  const text = input.value.trim();
+  if (!text) { input.focus(); return; }
+
+  analyzeBtn.disabled = true;
+  analyzeBtn.textContent = 'Dusting for prints…';
+  verdictArea.style.display = 'none';
+  stampEl.classList.remove('stamped');
+
+  setTimeout(() => {
+    const result = classify(text);
+
+    stampEl.textContent = result.label === 'FAKE' ? 'FLAGGED: FAKE' : 'VERIFIED: REAL';
+    stampEl.className = 'stamp ' + (result.label === 'FAKE' ? 'fake' : 'real');
+
+    const pct = result.confidence * 100;
+    const circumference = 298;
+    const offset = circumference - (circumference * (pct/100));
+    gaugeArc.style.stroke = result.label === 'FAKE' ? '#8c2b20' : '#3c5233';
+    gaugeArc.setAttribute('stroke-dashoffset', circumference);
+    gaugeValue.textContent = '—';
+
+    const angle = -90 + (pct/100)*180;
+    gaugeNeedle.setAttribute('transform', `rotate(${angle} 110 110)`);
+
+    const maxAbs = Math.max(
+      1e-6,
+      ...result.fakeEvidence.map(e => Math.abs(e.contrib)),
+      ...result.realEvidence.map(e => Math.abs(e.contrib))
+    );
+    fakeEvidenceEl.innerHTML = result.fakeEvidence.length
+      ? result.fakeEvidence.map(e => evidenceRow(e, maxAbs)).join('')
+      : '<div class="no-evidence">No strong fake-leaning terms detected.</div>';
+    realEvidenceEl.innerHTML = result.realEvidence.length
+      ? result.realEvidence.map(e => evidenceRow(e, maxAbs)).join('')
+      : '<div class="no-evidence">No strong real-leaning terms detected.</div>';
+
+    let note;
+    if (result.matchedTermCount === 0){
+      note = "Analyst's note: no vocabulary from the training corpus was recognized in this text — the reading above is based on the model's baseline bias alone. Try a longer excerpt for a more reliable verdict.";
+    } else if (result.confidence < 0.65){
+      note = `Analyst's note: this one sits near the decision boundary (only ${result.matchedTermCount} recognized terms, ${pct.toFixed(1)}% confidence). Per the case file, readings below ~65–70% confidence should go to a human reviewer rather than being acted on automatically.`;
+    } else {
+      note = `Analyst's note: verdict based on ${result.matchedTermCount} recognized term${result.matchedTermCount===1?'':'s'} from the training vocabulary, scored at ${pct.toFixed(1)}% confidence.`;
+    }
+    analystNote.textContent = note;
+
+    verdictArea.style.display = 'block';
+    requestAnimationFrame(() => {
+      gaugeArc.style.transition = 'stroke-dashoffset 1s ease-out';
+      gaugeArc.setAttribute('stroke-dashoffset', offset);
+      stampEl.classList.add('stamped');
+      let start = null;
+      const dur = 900;
+      function animateCounter(ts){
+        if (!start) start = ts;
+        const p = Math.min(1, (ts-start)/dur);
+        gaugeValue.textContent = (p*pct).toFixed(1) + '%';
+        if (p < 1) requestAnimationFrame(animateCounter);
+        else gaugeValue.textContent = pct.toFixed(1) + '%';
+      }
+      requestAnimationFrame(animateCounter);
+      verdictArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    analyzeBtn.disabled = false;
+    analyzeBtn.textContent = 'Open Investigation →';
+  }, 550);
+}
+
+analyzeBtn.addEventListener('click', runAnalysis);
+
+// Populate dossier stats from the real trained model metrics
+document.getElementById('stat-acc').textContent = (MODEL_DATA.metrics.accuracy*100).toFixed(1) + '%';
+document.getElementById('stat-f1').textContent = MODEL_DATA.metrics.f1.toFixed(3);
+document.getElementById('stat-terms').textContent = MODEL_DATA.terms.length.toLocaleString();
+</script>
+</body>
+</html>
